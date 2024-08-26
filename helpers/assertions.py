@@ -26,14 +26,16 @@ def make_simple_assertion(expected_value, actual_value, assertion_name: str):
     with allure.step(assertion_name):
         try:
             assert expected_value == actual_value
-            allure.attach(f"Ожидаемое значение: {str(expected_value)}\n"
-                          f"Фактическое значение: {str(actual_value)}\n",
+            allure.attach(f"Ожидаемое значение: [{type(expected_value).__name__}] {str(expected_value)}\n"
+                          f"Фактическое значение: [{type(actual_value).__name__}] {str(actual_value)}\n",
                           "Детали сравнения")
         except Exception as e:
-            allure.attach(f"Ожидаемое значение: {str(expected_value)}\n"
-                          f"Фактическое значение: {str(actual_value)}\n",
+            allure.attach(f"Ожидаемое значение: [{type(expected_value).__name__}] {str(expected_value)}\n"
+                          f"Фактическое значение: [{type(actual_value).__name__}] {str(actual_value)}\n",
                           "Детали сравнения")
-            raise AssertionError(f"Фактическое значение сравнения \"{assertion_name}\" не соответствует ожидаемому")
+            raise AssertionError(
+                f"Фактическое значение сравнения \"{assertion_name}\" не соответствует ожидаемому.\n{e}"
+            )
 
 
 def make_bulk_assertion(data: list[AssertionBundle], group_name: str = "Сравнение группы данных"):
