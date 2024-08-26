@@ -49,17 +49,9 @@ class TestMainAuthorization:
 
         make_simple_assertion(
             expected_value=f"User with email {self.INCORRECT_RANDOM_EMAIL} is not found or password is incorrect",
-            actual_value=serialized_model.description, assertion_name="Проверка детализации ошибки")
-
-        make_bulk_assertion(
-            group_name="Проверка полученных данных",
-            data=[
-                Assertion(
-                    expected_value=AuthStrings.USER_NOT_FOUND % self.INCORRECT_RANDOM_EMAIL,
-                    actual_value=serialized_model.description,
-                    assertion_name="Детализация ошибки содержит email запрашивающего",
-                )
-            ])
+            actual_value=serialized_model.description,
+            assertion_name="Детализация ошибки содержит email запрашивающего"
+        )
 
     @allure.title("Отказ в авторизации при передаче некорректного пароля")
     @allure.severity(severity_level=allure.severity_level.CRITICAL)
@@ -86,7 +78,9 @@ class TestMainAuthorization:
 
         make_simple_assertion(
             expected_value=f"User with email {self.CORRECT_ADMIN_EMAIL} is not found or password is incorrect",
-            actual_value=serialized_model.description, assertion_name="Проверка детализации ошибки")
+            actual_value=serialized_model.description,
+            assertion_name="Детализация ошибки содержит email запрашивающего"
+        )
 
     @allure.title("Успешная авторизация стандартного администратора")
     @allure.severity(severity_level=allure.severity_level.CRITICAL)
