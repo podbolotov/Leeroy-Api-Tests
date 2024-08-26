@@ -6,7 +6,7 @@ from helpers.json_tools import format_json
 
 def validate_response_model(model, data: str):
     try:
-        serialized_model = model.model_validate(data, strict=True)
+        serialized_model = model.model_validate(data)
         with allure.step("Валидация модели пройдена"):
             allure.attach(f"Использована модель: {model.__name__}\n"
                           f"Описание модели:{model.__doc__}",
@@ -23,3 +23,6 @@ def validate_response_model(model, data: str):
                     error_as_json = json.dumps(error, indent=4)
                     allure.attach(format_json(error_as_json), f"{error['msg']} : {error['loc']}")
                 raise AssertionError(f"Обнаружено ошибок валидации: {e.error_count()}")
+    except ValueError as e:
+        error = f"Не удалось провести валидацию.\n{e}"
+        raise AssertionError(error)

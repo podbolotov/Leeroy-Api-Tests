@@ -15,10 +15,10 @@ from database.tokens import get_access_token_by_id, get_refresh_token_by_id
 fake = Faker()
 
 
-@allure.parent_suite("Тесты")
-@allure.suite("Авторизация")
+@allure.parent_suite("Домен «Авторизация»")
+@allure.suite("Авторизация пользователя")
 @allure.sub_suite("Основные функциональные тесты авторизации")
-class TestBasicAuthorization:
+class TestMainAuthorization:
     CORRECT_ADMIN_EMAIL = FrVars.APP_DEFAULT_USER_EMAIL
     CORRECT_ADMIN_PASSWORD = FrVars.APP_DEFAULT_USER_PASSWORD
     INCORRECT_RANDOM_EMAIL = fake.email()
@@ -97,7 +97,7 @@ class TestBasicAuthorization:
         "- Соответствие структуры (модели) ответа ожидаемой\n"
         "- Соответствие струкутры (модели) обоих выпущенных токенов\n"
         "- Корректность записи данных о выпущенных токенах в БД, совпадение записанных в БД данных о токенах с данными "
-        "из декодированных токенов.\n"
+        "из декодированных токенов\n"
     )
     def test_successful_authorize_default_administrator(self, database, variable_manager, logout):
         res = requests.post(

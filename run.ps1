@@ -89,7 +89,7 @@ Write-Host "   ---- "
 
 # Allure report generation
 Write-Host "[ Generating single-file report with Allure... ]"
-allure generate $PROJECT_ROOT/allure-results --clean --output $PROJECT_ROOT/allure-report/$CURRENT_TIME/ --single-file
+allure generate $PROJECT_ROOT/allure-results --clean --output $PROJECT_ROOT/allure-report/$CURRENT_TIME/ --single-file  --name "Leeroy Api Tests"
 
 # Open generated report in default browser
 $(Start-Process "$PROJECT_ROOT\allure-report\$CURRENT_TIME\index.html")

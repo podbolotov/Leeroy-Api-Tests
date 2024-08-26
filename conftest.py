@@ -3,9 +3,11 @@ import requests
 
 from helpers.allure_report import attach_request_data_to_report
 from helpers.assertions import make_simple_assertion
+from helpers.validate_response import validate_response_model
 from helpers.varirable_manager import VariableManager
 from database.db_baseclass import Database
 from data.framework_variables import FrameworkVariables as FrVars
+from models.authorization import AuthSuccessfulResponse
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -24,6 +26,44 @@ def variable_manager(database):
     """
     vman = VariableManager()
     yield vman
+
+
+@pytest.fixture(scope="class")
+def authorize_administrator(variable_manager) -> AuthSuccessfulResponse:
+    res = requests.post(
+        url=FrVars.APP_HOST + "/authorize",
+        json={
+            "email": FrVars.APP_DEFAULT_USER_EMAIL,
+            "password": FrVars.APP_DEFAULT_USER_PASSWORD
+        }
+    )
+    attach_request_data_to_report(res)
+
+    make_simple_assertion(
+        expected_value=200,
+        actual_value=res.status_code,
+        assertion_name="Код ответа на запрос фикстуры"
+    )
+
+    serialized_response = validate_response_model(
+        model=AuthSuccessfulResponse,
+        data=res.json()
+    )
+
+    yield serialized_response
+
+    res = requests.delete(
+        url=FrVars.APP_HOST + "/logout",
+        headers={
+            "Access-Token": serialized_response.access_token
+        }
+    )
+    attach_request_data_to_report(res)
+    make_simple_assertion(
+        expected_value=200,
+        actual_value=res.status_code,
+        assertion_name="Код ответа на запрос фикстуры"
+    )
 
 
 @pytest.fixture(scope="function")
