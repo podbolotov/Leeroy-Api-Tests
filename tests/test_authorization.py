@@ -3,7 +3,6 @@ import requests
 from faker import Faker
 
 from data.framework_variables import FrameworkVariables as FrVars
-from data.sql_queries import SQLQueries as Sqlq
 from helpers.allure_report import attach_request_data_to_report
 from helpers.assertions import make_simple_assertion, make_bulk_assertion, AssertionBundle as Assertion
 from helpers.validate_response import validate_response_model
