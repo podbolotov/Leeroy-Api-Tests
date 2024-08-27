@@ -111,12 +111,12 @@ class TestMainAuthorization:
         )
 
         user_id_from_db = get_user_data_by_email(db=database, email=self.CORRECT_ADMIN_EMAIL).id
-        allure.attach(
-            str(user_id_from_db),
-            f'ID пользователя с email {self.CORRECT_ADMIN_EMAIL}, полученный из БД.'
-        )
 
         with allure.step("Декодирование и верификация полученного Access-Token'а"):
+            allure.attach(
+                str(user_id_from_db),
+                f'ID пользователя с email {self.CORRECT_ADMIN_EMAIL}, полученный из БД.'
+            )
             decoded_access_token = validate_and_decode_token(serialized_response.access_token)
             allure.attach(
                 format_json(decoded_access_token.model_dump_json()),
@@ -131,6 +131,10 @@ class TestMainAuthorization:
             )
 
         with allure.step("Декодирование и верификация полученного Refresh-Token'а"):
+            allure.attach(
+                str(user_id_from_db),
+                f'ID пользователя с email {self.CORRECT_ADMIN_EMAIL}, полученный из БД.'
+            )
             decoded_refresh_token = validate_and_decode_token(serialized_response.refresh_token)
             allure.attach(
                 format_json(decoded_refresh_token.model_dump_json()),
