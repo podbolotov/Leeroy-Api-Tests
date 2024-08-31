@@ -33,7 +33,6 @@ class Database:
         if leeroy_in_exist is None:
             raise DatabaseError("Database Leeroy is not exist!")
         else:
-            print("Leeroy DB is exist. Try to reconnect...")
             self.connection.close()
             self.connection = psycopg2.connect(
                 dbname='leeroy', user=self.user, password=self.password, host=self.host, port=self.port
