@@ -37,7 +37,7 @@ class TestCreateUsers:
         "данными полученными в ответе (в случае id) и данными переданными в запросе (в случае со всеми остальными "
         "данными)"
     )
-    def test_successful_user_creation(self, database, authorize_administrator):
+    def test_successful_user_creation(self, database, variable_manager, authorize_administrator, delete_user):
         res = requests.post(
             url=FrVars.APP_HOST + "/users",
             headers={
@@ -102,3 +102,6 @@ class TestCreateUsers:
                         assertion_name="Созданный пользователь не является администратором"
                     )
                 ])
+
+        # Переменная user_id назначается для дальнейшей обработки в фикстуре delete_user.
+        variable_manager.set("user_id", serialized_response.user_id)
