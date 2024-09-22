@@ -1,18 +1,15 @@
-import random
-
 import allure
 import pytest
 import requests
 from faker import Faker
 
 from data.framework_variables import FrameworkVariables as FrVars
-from database.users import get_user_data_by_email, get_user_data_by_id
+from database.users import get_user_data_by_id
 from helpers.allure_report import attach_request_data_to_report
-from helpers.assertions import make_simple_assertion, make_bulk_assertion, AssertionBundle as Assertion
-from helpers.json_tools import format_json
-from helpers.password_tools import hash_password
+from helpers.assertions import make_simple_assertion
 from helpers.validate_response import validate_response_model
-from models.users import CreateUserSuccessfulResponse, UserPermissionsChangeSuccessfulResponse
+from models.users import UserPermissionsChangeSuccessfulResponse, \
+    UserPermissionsChangeBadRequestResponse, UserPermissionsChangeBadRequestReason
 
 fake = Faker()
 
@@ -90,4 +87,69 @@ class TestUsersPermissions:
             actual_value=serialized_response.is_admin,
             assertion_name="Значение признака наличия прав администратора в ответе на запрос соответствует ожидаемому "
                            "значению"
+        )
+
+
+    @pytest.mark.parametrize('before_test_user_has_administrator_permissions', [True, False], indirect=True)
+    def test_repeated_permissions_change(
+            self, database, authorize_administrator, create_user, before_test_user_has_administrator_permissions
+    ):
+        # Описание кейса, подготовка параметров и тестовых данных
+        if before_test_user_has_administrator_permissions is False:
+            permission_action = "revoke"
+            case_title_part = "понижении"
+            case_description_part = "отзыве у пользователя"
+            expected_administrator_permission_state_after_action = False
+        elif before_test_user_has_administrator_permissions is True:
+            permission_action = "grant"
+            case_title_part = "повышении"
+            case_description_part = "присвоении пользователю"
+            expected_administrator_permission_state_after_action = True
+        else:
+            raise AssertionError("Incorrect set_initial_permission_level state!")
+
+        allure.dynamic.title(f"Отказ в повторном {case_title_part} уровня прав пользователя")
+        allure.dynamic.severity(severity_level=allure.severity_level.CRITICAL)
+        allure.dynamic.description(
+            f"Данный тест проверяет отказ в повторном {case_description_part} прав администратора приложения.\n\n"
+            "При проведении теста проверяется:\n"
+            "- Соответствие кода ответа ожидаемому\n"
+            "- Соответствие структуры (модели) ответа ожидаемой\n"
+            "- Отсутствие обновления признака наличия прав администратора в базе данных"
+        )
+
+        user_id = create_user.user_id
+        res = requests.patch(
+            url=FrVars.APP_HOST + f"/users/admin-permissions/{user_id}/{permission_action}",
+            headers={
+                "Access-Token": authorize_administrator.access_token
+            }
+        )
+        attach_request_data_to_report(res)
+
+        make_simple_assertion(expected_value=400, actual_value=res.status_code, assertion_name="Проверка кода ответа")
+
+        serialized_response = validate_response_model(
+            model=UserPermissionsChangeBadRequestResponse,
+            data=res.json()
+        )
+
+        user_data_from_db = get_user_data_by_id(db=database, user_id=user_id)
+
+        make_simple_assertion(
+            expected_value=expected_administrator_permission_state_after_action,
+            actual_value=user_data_from_db.is_admin,
+            assertion_name="Значение признака наличия прав администратора в БД не изменилось и соответствует значению "
+                           "до отправки запроса"
+        )
+
+        if before_test_user_has_administrator_permissions is True:
+            deny_reason = UserPermissionsChangeBadRequestReason.user_is_already_has_admin_permissions.value
+        else:
+            deny_reason = UserPermissionsChangeBadRequestReason.user_is_already_has_no_admin_permissions.value
+
+        make_simple_assertion(
+            expected_value=deny_reason,
+            actual_value=serialized_response.description.value,
+            assertion_name="Описание ошибки содержит причину отказа"
         )

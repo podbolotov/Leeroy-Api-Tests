@@ -1,4 +1,5 @@
 import uuid
+from enum import Enum
 from typing import Literal, Annotated
 from uuid import UUID
 
@@ -48,6 +49,17 @@ class CreateUserSuccessfulResponse(BaseModel):
     """ Ожидаемая модель ответа при успешном создании пользователя """
     status: Literal["User successfully created"]
     user_id: UUID
+
+class UserPermissionsChangeBadRequestReason(str, Enum):
+    """ Возможные варианты описания ошибки при попытке повторного назначения пользователю существующего уровня прав """
+    user_is_already_has_admin_permissions = "User is already has administrator permissions"
+    user_is_already_has_no_admin_permissions = "User is already has no administrator permissions"
+
+
+class UserPermissionsChangeBadRequestResponse(BaseModel):
+    """ Ожидаемая модель ответа при попытке повторного назначения пользователю существующего уровня прав """
+    status: Literal["PERMISSIONS_IS_NOT_CHANGED"]
+    description: UserPermissionsChangeBadRequestReason
 
 class UserPermissionsChangeSuccessfulResponse(BaseModel):
     """ Ожидаемая модель ответа при успешном изменении уровня прав пользователя """
