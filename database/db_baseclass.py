@@ -45,6 +45,11 @@ class Database:
             result = self.cursor.fetchall()
         elif fetchmode == 'one':
             result = self.cursor.fetchone()
+        elif fetchmode == 'nofetch':
+            result = None
         else:
             raise DatabaseError("Unsupported fetch mode type!")
         return result
+
+    def commit(self):
+        self.connection.commit()

@@ -4,12 +4,13 @@ import requests
 from faker import Faker
 
 from data.framework_variables import FrameworkVariables as FrVars
-from database.users import get_user_data_by_id
+from database.users import get_user_data_by_id, get_user_data_by_email
 from helpers.allure_report import attach_request_data_to_report
 from helpers.assertions import make_simple_assertion
 from helpers.validate_response import validate_response_model
-from models.users import UserPermissionsChangeSuccessfulResponse, \
-    UserPermissionsChangeBadRequestResponse, UserPermissionsChangeBadRequestReason
+from models.users import (UserPermissionsChangeSuccessfulResponse,
+    UserPermissionsChangeBadRequestResponse, UserPermissionsChangeBadRequestReason,
+    UserPermissionsChangeLastAdminErrorResponse)
 
 fake = Faker()
 
@@ -152,4 +153,43 @@ class TestUsersPermissions:
             expected_value=deny_reason,
             actual_value=serialized_response.description.value,
             assertion_name="Описание ошибки содержит причину отказа"
+        )
+
+
+    @allure.title("Запрет отзыва прав администратора у последнего администратора приложения")
+    @allure.severity(severity_level=allure.severity_level.CRITICAL)
+    @allure.description(
+        "Данный тест проверяет отказ в отзыве прав администратора у пользователя, являющегося последним "
+        "администратором приложения.\n\n"
+        "При проведении теста проверяется:\n"
+        "- Соответствие кода ответа ожидаемому\n"
+        "- Соответствие структуры (модели) ответа ожидаемой\n"
+        "- Неизменность признака наличия прав администратора в БД"
+    )
+    def test_last_administrator_permissions_revoke(
+            self, database, authorize_administrator, revoke_all_administrators_permissions_except_default
+    ):
+        default_user_data = get_user_data_by_email(db=database, email=FrVars.APP_DEFAULT_USER_EMAIL)
+        user_id = default_user_data.id
+        res = requests.patch(
+            url=FrVars.APP_HOST + f"/users/admin-permissions/{user_id}/revoke",
+            headers={
+                "Access-Token": authorize_administrator.access_token
+            }
+        )
+        attach_request_data_to_report(res)
+
+        make_simple_assertion(expected_value=403, actual_value=res.status_code, assertion_name="Проверка кода ответа")
+
+        validate_response_model(
+            model=UserPermissionsChangeLastAdminErrorResponse,
+            data=res.json()
+        )
+
+        user_data_from_db = get_user_data_by_id(db=database, user_id=user_id)
+
+        make_simple_assertion(
+            expected_value=True,
+            actual_value=user_data_from_db.is_admin,
+            assertion_name="Признак наличия прав администратора в БД не изменился и соответствует значению True"
         )

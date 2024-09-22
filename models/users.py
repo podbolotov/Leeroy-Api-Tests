@@ -61,6 +61,11 @@ class UserPermissionsChangeBadRequestResponse(BaseModel):
     status: Literal["PERMISSIONS_IS_NOT_CHANGED"]
     description: UserPermissionsChangeBadRequestReason
 
+class UserPermissionsChangeLastAdminErrorResponse(BaseModel):
+    """ Ожидаемая модель ответа при отзыва прав администратора у последнего администратора """
+    status: Literal["FORBIDDEN"]
+    description: Literal["Last administrator permissions can not be revoked!"]
+
 class UserPermissionsChangeSuccessfulResponse(BaseModel):
     """ Ожидаемая модель ответа при успешном изменении уровня прав пользователя """
     status: str
