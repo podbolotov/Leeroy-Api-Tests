@@ -1,11 +1,12 @@
 import random
 
 import allure
+import pytest
 import requests
 from faker import Faker
 
 from data.framework_variables import FrameworkVariables as FrVars
-from database.users import get_user_data_by_email
+from database.users import get_user_data_by_email, get_user_data_by_id
 from helpers.allure_report import attach_request_data_to_report
 from helpers.assertions import make_simple_assertion, make_bulk_assertion, AssertionBundle as Assertion
 from helpers.json_tools import format_json
@@ -21,19 +22,37 @@ fake = Faker()
 @allure.sub_suite("Основные функциональные тесты изменения уровня прав пользователей")
 class TestUsersPermissions:
 
-    @allure.title("Повышение уровня прав пользователя до администратора")
-    @allure.severity(severity_level=allure.severity_level.CRITICAL)
-    @allure.description(
-        "Данный тест проверяет возможность присвоения пользователю прав администратора приложения.\n\n"
-        "При проведении теста проверяется:\n"
-        "- Соответствие кода ответа ожидаемому\n"
-        "- Соответствие структуры (модели) ответа ожидаемой\n"
-        "- Корректность обновления признака наличия прав администратора в базе данных"
-    )
-    def test_successful_permissions_increase(self, database, authorize_administrator, create_user):
-        user_id = str(create_user.user_id)
+    @pytest.mark.parametrize('before_test_user_has_administrator_permissions', [True, False], indirect=True)
+    def test_successful_permissions_change(
+            self, database, authorize_administrator, create_user, before_test_user_has_administrator_permissions
+    ):
+        # Описание кейса, подготовка параметров и тестовых данных
+        if before_test_user_has_administrator_permissions is True:
+            permission_action = "revoke"
+            case_title_part = "понижение"
+            case_description_part = "отзыва у пользователя"
+            expected_administrator_permission_state_after_action = False
+        elif before_test_user_has_administrator_permissions is False:
+            permission_action = "grant"
+            case_title_part = "повышение"
+            case_description_part = "присвоения пользователю"
+            expected_administrator_permission_state_after_action = True
+        else:
+            raise AssertionError("Incorrect set_initial_permission_level state!")
+
+        allure.dynamic.title(f"Успешное {case_title_part} уровня прав пользователя")
+        allure.dynamic.severity(severity_level=allure.severity_level.CRITICAL)
+        allure.dynamic.description(
+            f"Данный тест проверяет возможность {case_description_part} прав администратора приложения.\n\n"
+            "При проведении теста проверяется:\n"
+            "- Соответствие кода ответа ожидаемому\n"
+            "- Соответствие структуры (модели) ответа ожидаемой\n"
+            "- Корректность обновления признака наличия прав администратора в базе данных"
+        )
+
+        user_id = create_user.user_id
         res = requests.patch(
-            url=FrVars.APP_HOST + f"/users/admin-permissions/{user_id}/grant",
+            url=FrVars.APP_HOST + f"/users/admin-permissions/{user_id}/{permission_action}",
             headers={
                 "Access-Token": authorize_administrator.access_token
             }
@@ -45,4 +64,30 @@ class TestUsersPermissions:
         serialized_response = validate_response_model(
             model=UserPermissionsChangeSuccessfulResponse,
             data=res.json()
+        )
+
+        user_data_from_db = get_user_data_by_id(db=database, user_id=user_id)
+
+        # Формируем строку с полным именем пользователя
+        user_fullname = create_user.firstname
+        if create_user.middlename is not None: user_fullname = user_fullname + f" {create_user.middlename}"
+        user_fullname = user_fullname + f" {create_user.surname}"
+
+        make_simple_assertion(
+            expected_value=f"Administrator permissions for {user_fullname} is successfully changed",
+            actual_value=serialized_response.status,
+            assertion_name="Статусное сообщение в ответе содержит полное имя пользователя"
+        )
+
+        make_simple_assertion(
+            expected_value=expected_administrator_permission_state_after_action,
+            actual_value=user_data_from_db.is_admin,
+            assertion_name="Значение признака наличия прав администратора в БД соответствует ожидаемому значению"
+        )
+
+        make_simple_assertion(
+            expected_value=expected_administrator_permission_state_after_action,
+            actual_value=serialized_response.is_admin,
+            assertion_name="Значение признака наличия прав администратора в ответе на запрос соответствует ожидаемому "
+                           "значению"
         )

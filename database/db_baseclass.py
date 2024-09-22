@@ -39,8 +39,6 @@ class Database:
             )
             self.cursor = self.connection.cursor()
 
-        return self.connection, self.cursor
-
     def execute_db_request(self, query: str, params: tuple = None, fetchmode: str = 'all'):
         self.cursor.execute(query, params)
         if fetchmode == 'all':

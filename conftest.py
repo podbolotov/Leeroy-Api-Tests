@@ -16,18 +16,22 @@ from models.users import CreatedUserDataBundle, CreateUserSuccessfulResponse, De
 
 
 @pytest.fixture(scope="session", autouse=True)
-def database():
-    """ Фикстура, предоставляющая подключение к базе данных """
+def database() -> Database:
+    """
+    Данная фикстура предоставляет единое подключение к базе данных.
+
+    :return: Экземпляр класса Database.
+    """
     db = Database()
     db.connect_to_database()
     yield db
 
 
 @pytest.fixture(scope="session")
-def variable_manager(database):
+def variable_manager(database) -> VariableManager:
     """
     Данная фикстура предоставляет менеджер переменных.
-    :return:
+    :return: Экземпляр класса VariableManager.
     """
     vman = VariableManager()
     yield vman
@@ -38,8 +42,8 @@ def authorize_administrator(variable_manager) -> AuthSuccessfulResponse:
     """
     Данная фикстура авторизует стандартного администратора приложения.
 
-    :param variable_manager: Ссылка на фикстуру "variable_manager"
-    :return AuthSuccessfulResponse: (yield) Сериализованный ответ на запрос авторизации
+    :param variable_manager: Ссылка на фикстуру "variable_manager".
+    :return AuthSuccessfulResponse: (yield) Сериализованный ответ на запрос авторизации.
     """
     res = requests.post(
         url=FrVars.APP_HOST + "/authorize",
@@ -77,7 +81,7 @@ def authorize_administrator(variable_manager) -> AuthSuccessfulResponse:
     )
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="function")
 def create_user(database, authorize_administrator) -> CreatedUserDataBundle:
     """
     Данная фикстура обеспечивает создание пользователя без прав администратора и его удаление после завершения
@@ -86,6 +90,7 @@ def create_user(database, authorize_administrator) -> CreatedUserDataBundle:
         Необходима для запроса уровня прав пользователя перед отправкой запроса на удаление пользователя.
     :param authorize_administrator: Ссылка на фикстуру "variable_manager".
         Используется данной фикстурой, так как создание пользователя требует авторизации администратора.
+    :return: Набор данных зарегистрированного пользователя.
     """
     # Стадия подготовки
     # Подготовка данных создаваемого пользователя
@@ -130,8 +135,8 @@ def create_user(database, authorize_administrator) -> CreatedUserDataBundle:
         email=new_user_random_email,
         firstname=new_user_random_firstname,
         middlename=new_user_random_middlename,
-        password=new_user_random_surname,
-        surname=new_user_random_password
+        password=new_user_random_password,
+        surname=new_user_random_surname
     )
     # Предоставление набора для использования в тестах
     yield created_user_data
@@ -183,7 +188,7 @@ def create_user(database, authorize_administrator) -> CreatedUserDataBundle:
 
 
 @pytest.fixture(scope="function")
-def logout(variable_manager):
+def logout(variable_manager) -> None:
     """
     Данная фикстура обеспечивает вызов эндпоинта /logout для тестовых функций, которые завершились корректной
     авторизацией и требуют погашения выданных токенов.
@@ -217,7 +222,7 @@ def logout(variable_manager):
 
 
 @pytest.fixture(scope="function")
-def delete_user(database, variable_manager, authorize_administrator):
+def delete_user(database, variable_manager, authorize_administrator) -> None:
     """
     Данная фикстура обеспечивает вызов эндпоинта DELETE /users/{user_id} для тестовых функций, которые завершились
     корректным созданием пользователя и требуют его удаления.
