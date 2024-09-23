@@ -66,6 +66,11 @@ class UserPermissionsChangeLastAdminErrorResponse(BaseModel):
     status: Literal["FORBIDDEN"]
     description: Literal["Last administrator permissions can not be revoked!"]
 
+class UserPermissionsChangeLackOfPermissionsErrorResponse(BaseModel):
+    """ Ожидаемая модель ответа при попытке изменения уровня прав пользователем, не имеющим прав администратора """
+    status: Literal["FORBIDDEN"]
+    description: Literal["Only administrators can change administrator permissions"]
+
 class UserPermissionsChangeSuccessfulResponse(BaseModel):
     """ Ожидаемая модель ответа при успешном изменении уровня прав пользователя """
     status: str

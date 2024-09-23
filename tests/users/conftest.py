@@ -3,7 +3,7 @@ import pytest
 import requests
 
 from data.framework_variables import FrameworkVariables as FrVars
-from database.users import get_user_data_by_email, get_all_administrators_ids_except_default, \
+from database.users import get_user_data_by_email, get_all_administrators_ids, \
     bulk_change_administrator_permissions
 from helpers.allure_report import attach_request_data_to_report
 from helpers.assertions import make_simple_assertion
@@ -63,7 +63,7 @@ def before_test_user_has_administrator_permissions(
 @pytest.fixture(scope='function')
 def revoke_all_administrators_permissions_except_default(database):
     # Запрашиваем список всех существующих администраторов, за исключением стандартного и сохраняем его в переменную.
-    initial_administrators_ids = get_all_administrators_ids_except_default(database)
+    initial_administrators_ids = get_all_administrators_ids(db=database, mode='except_default')
     allure.attach(str(initial_administrators_ids), "Изначальный список ID администраторов, "
                                               "за исключением стандартного администратора")
     # Осуществляем отзыв полномочий администратора у всех администраторов, кроме стандартного.
@@ -72,7 +72,7 @@ def revoke_all_administrators_permissions_except_default(database):
     # Возвращаем права всем администраторам, у которых права были отозваны.
     bulk_change_administrator_permissions(db=database, ids=initial_administrators_ids, is_admin=True)
     # Запрашиваем список всех администраторов, кроме стандартного, после восстановления прав.
-    administrators_ids_after_restore = get_all_administrators_ids_except_default(database)
+    administrators_ids_after_restore = get_all_administrators_ids(db=database, mode='except_default')
     allure.attach(str(initial_administrators_ids), "Список ID администраторов, за исключением стандартного "
                                                    "администратора, после восстановления прав")
     # Проверяем, что права администратора возвращены всем существовавшим до отзыва прав администраторам.

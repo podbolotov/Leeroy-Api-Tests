@@ -1,16 +1,18 @@
 import allure
 import pytest
 import requests
+import random
 from faker import Faker
-
 from data.framework_variables import FrameworkVariables as FrVars
-from database.users import get_user_data_by_id, get_user_data_by_email
+from database.users import get_user_data_by_id, get_user_data_by_email, get_all_nonadmin_users_ids, \
+    get_all_administrators_ids
 from helpers.allure_report import attach_request_data_to_report
 from helpers.assertions import make_simple_assertion
 from helpers.validate_response import validate_response_model
 from models.users import (UserPermissionsChangeSuccessfulResponse,
-    UserPermissionsChangeBadRequestResponse, UserPermissionsChangeBadRequestReason,
-    UserPermissionsChangeLastAdminErrorResponse)
+                          UserPermissionsChangeBadRequestResponse, UserPermissionsChangeBadRequestReason,
+                          UserPermissionsChangeLastAdminErrorResponse,
+                          UserPermissionsChangeLackOfPermissionsErrorResponse)
 
 fake = Faker()
 
@@ -90,7 +92,7 @@ class TestUsersPermissions:
                            "значению"
         )
 
-
+    @allure.severity(severity_level=allure.severity_level.NORMAL)
     @pytest.mark.parametrize('before_test_user_has_administrator_permissions', [True, False], indirect=True)
     def test_repeated_permissions_change(
             self, database, authorize_administrator, create_user, before_test_user_has_administrator_permissions
@@ -110,7 +112,6 @@ class TestUsersPermissions:
             raise AssertionError("Incorrect set_initial_permission_level state!")
 
         allure.dynamic.title(f"Отказ в повторном {case_title_part} уровня прав пользователя")
-        allure.dynamic.severity(severity_level=allure.severity_level.CRITICAL)
         allure.dynamic.description(
             f"Данный тест проверяет отказ в повторном {case_description_part} прав администратора приложения.\n\n"
             "При проведении теста проверяется:\n"
@@ -155,7 +156,6 @@ class TestUsersPermissions:
             assertion_name="Описание ошибки содержит причину отказа"
         )
 
-
     @allure.title("Запрет отзыва прав администратора у последнего администратора приложения")
     @allure.severity(severity_level=allure.severity_level.CRITICAL)
     @allure.description(
@@ -192,4 +192,62 @@ class TestUsersPermissions:
             expected_value=True,
             actual_value=user_data_from_db.is_admin,
             assertion_name="Признак наличия прав администратора в БД не изменился и соответствует значению True"
+        )
+
+
+    @allure.severity(severity_level=allure.severity_level.CRITICAL)
+    @pytest.mark.parametrize("case", ['unauthorized_grant', 'unauthorized_revoke'])
+    def test_permissions_change_without_administrator_permissions(
+            self, database, create_and_authorize_user, revoke_all_administrators_permissions_except_default, case
+    ):
+        if case == 'unauthorized_grant':
+            allure.dynamic.title("Запрет повышения уровня прав пользователем, не имеющим прав администратора")
+            all_nonadmin_users_ids = get_all_nonadmin_users_ids(db=database)
+            random_user_id = random.choice(all_nonadmin_users_ids)
+            expected_user_permission_value_in_db_after_request=False
+            permissions_action = 'grant'
+            case_description = ("В данном варианте теста проверяется отказ при попытке повысить уровень прав случайному"
+                                " пользователю без прав администратора, при отправке запроса от имени пользователя, "
+                                "не имеющего прав администратора.")
+        else:  # 'unauthorized_revoke'
+            allure.dynamic.title("Запрет понижения уровня прав пользователем, не имеющим прав администратора")
+            all_administrators_ids = get_all_administrators_ids(db=database)
+            random_user_id = random.choice(all_administrators_ids)
+            expected_user_permission_value_in_db_after_request = True
+            permissions_action = 'revoke'
+            case_description = ("В данном варианте теста проверяется отказ при попытке отзыва прав у случайного "
+                                "администратора, при отправке запроса от имени пользователя, не имеющего прав "
+                                "администратора.")
+
+        allure.dynamic.description(
+            "Данный тест проверяет отказ в изменении уровня прав пользователем, не имеющим на это полномочий.\n\n"
+            f"{case_description}"
+            "\n\nПри проведении теста проверяется:\n"
+            "- Соответствие кода ответа ожидаемому\n"
+            "- Соответствие структуры (модели) ответа ожидаемой\n"
+            "- Неизменность признака наличия или отсутствия прав администратора в БД\n\n"
+        )
+
+        res = requests.patch(
+            url=FrVars.APP_HOST + f"/users/admin-permissions/{random_user_id}/{permissions_action}",
+            headers={
+                "Access-Token": create_and_authorize_user.access_token
+            }
+        )
+        attach_request_data_to_report(res)
+
+        make_simple_assertion(expected_value=403, actual_value=res.status_code, assertion_name="Проверка кода ответа")
+
+        validate_response_model(
+            model=UserPermissionsChangeLackOfPermissionsErrorResponse,
+            data=res.json()
+        )
+
+        user_data_from_db_after_request = get_user_data_by_id(db=database, user_id=random_user_id)
+
+        make_simple_assertion(
+            expected_value=expected_user_permission_value_in_db_after_request,
+            actual_value=user_data_from_db_after_request.is_admin,
+            assertion_name=f"Признак наличия прав администратора в БД не изменился и соответствует значению "
+                           f"{expected_user_permission_value_in_db_after_request}"
         )

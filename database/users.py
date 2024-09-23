@@ -1,5 +1,7 @@
 from uuid import UUID
 
+from dns.e164 import query
+
 from database.db_baseclass import Database
 from models.users import DatabaseUserDataModel
 from data.framework_variables import FrameworkVariables as FrVars
@@ -43,12 +45,31 @@ def get_user_data_by_id(db: Database, user_id: UUID) -> DatabaseUserDataModel:
     return user_data
 
 
-def get_all_administrators_ids_except_default(db: Database) -> tuple:
+def get_all_administrators_ids(db: Database, mode: str | None = None) -> tuple:
+
+    if mode == 'except_default':
+        sql_query = "SELECT id FROM public.users WHERE is_admin = 'true' AND email != %s "
+        sql_params=(str(FrVars.APP_DEFAULT_USER_EMAIL),)
+    else:
+        sql_query = "SELECT id FROM public.users WHERE is_admin = 'true'"
+        sql_params = None
+
     db_result = db.execute_db_request(
-        query='''
-        SELECT id FROM public.users WHERE is_admin = 'true' AND email != %s
-        ''',
-        params=(str(FrVars.APP_DEFAULT_USER_EMAIL),),
+        query=sql_query,
+        params=sql_params,
+        fetchmode='all'
+    )
+    ids_list = []
+    for row in db_result:
+        ids_list.append(row[0])
+    return tuple(ids_list)
+
+def get_all_nonadmin_users_ids(db: Database) -> tuple:
+
+    sql_query = "SELECT id FROM public.users WHERE is_admin = 'false'"
+
+    db_result = db.execute_db_request(
+        query=sql_query,
         fetchmode='all'
     )
     ids_list = []

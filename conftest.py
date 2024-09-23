@@ -186,6 +186,51 @@ def create_user(database, authorize_administrator) -> CreatedUserDataBundle:
             data=res.json()
         )
 
+@pytest.fixture(scope="function")
+def create_and_authorize_user(create_user) -> AuthSuccessfulResponse:
+    """
+    Данная фикстура обеспечивает создание пользователя без прав администратора и его авторизацию, а также его выход из
+    системы и удаление после завершения тестирования.
+    Для создания пользователя данная фикстура вызывает существующую фикстуру "create_user", реализуя на своей стороне
+    только авторизацию и выход из системы.
+    :param create_user: Ссылка на фикстуру "create_user".
+        Используется для создания и удаления пользователя.
+    :return: Набор данных зарегистрированного пользователя.
+    """
+    res = requests.post(
+        url=FrVars.APP_HOST + "/authorize",
+        json={
+            "email": create_user.email,
+            "password": create_user.password
+        }
+    )
+    attach_request_data_to_report(res)
+
+    make_simple_assertion(
+        expected_value=200,
+        actual_value=res.status_code,
+        assertion_name="Код ответа на запрос фикстуры"
+    )
+
+    serialized_response = validate_response_model(
+        model=AuthSuccessfulResponse,
+        data=res.json()
+    )
+
+    yield serialized_response
+
+    res = requests.delete(
+        url=FrVars.APP_HOST + "/logout",
+        headers={
+            "Access-Token": serialized_response.access_token
+        }
+    )
+    attach_request_data_to_report(res)
+    make_simple_assertion(
+        expected_value=200,
+        actual_value=res.status_code,
+        assertion_name="Код ответа на запрос фикстуры"
+    )
 
 @pytest.fixture(scope="function")
 def logout(variable_manager) -> None:
