@@ -48,6 +48,10 @@ class CreatedUserDataBundle(BaseModel):
 class CreateUserWithUsedEmailErrorResponse(DefaultError):
     status: Literal["EMAIL_IS_NOT_AVAILABLE"]
 
+class CreateUserForbiddenResponse(DefaultError):
+    status: Literal["FORBIDDEN"]
+    description: Literal["Only administrators can create new users"]
+
 class CreateUserSuccessfulResponse(BaseModel):
     """ Ожидаемая модель ответа при успешном создании пользователя """
     status: Literal["User successfully created"]

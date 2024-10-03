@@ -11,7 +11,7 @@ from helpers.assertions import make_simple_assertion, make_bulk_assertion, Asser
 from helpers.json_tools import format_json
 from helpers.password_tools import hash_password
 from helpers.validate_response import validate_response_model
-from models.users import CreateUserSuccessfulResponse, CreateUserWithUsedEmailErrorResponse
+from models.users import CreateUserSuccessfulResponse, CreateUserWithUsedEmailErrorResponse, CreateUserForbiddenResponse
 
 fake = Faker()
 
@@ -68,6 +68,52 @@ class TestCreateUsers:
             actual_value=users_count_by_email_distinct,
             assertion_name=f"Общее количество записей в таблице пользователей идентично количеству пользователей с "
                            f"уникальным email"
+        )
+
+
+    @allure.title("Отказ при отсутствии прав администратора")
+    @allure.severity(severity_level=allure.severity_level.CRITICAL)
+    @allure.description(
+        "Данный тест проверяет невозможность создания пользователя при передаче запроса от имени пользователя, не "
+        "имеющего прав администратора.\n\n"
+        "При проведении теста проверяется:\n"
+        "- Соответствие кода ответа ожидаемому\n"
+        "- Соответствие структуры (модели) ответа ожидаемой\n"
+        "- Отсутствие в БД записи о пользователе, который мог бы быть создан этим запросом при его передаче от имени "
+        "администратора"
+    )
+    def test_create_user_without_administrator_permissions(
+            self, database, variable_manager, create_and_authorize_user
+    ):
+        new_user_mail = fake.email()
+        res = requests.post(
+            url=FrVars.APP_HOST + "/users",
+            headers={
+                "Access-Token": create_and_authorize_user.access_token
+            },
+            json={
+                "email": new_user_mail,
+                "firstname": fake.first_name(),
+                "middlename": fake.first_name(),
+                "surname": fake.last_name(),
+                "password": fake.password()
+            }
+        )
+        attach_request_data_to_report(res)
+
+        make_simple_assertion(expected_value=403, actual_value=res.status_code, assertion_name="Проверка кода ответа")
+
+        validate_response_model(
+            model=CreateUserForbiddenResponse,
+            data=res.json()
+        )
+
+        potentialy_created_user_data = get_user_data_by_email(db=database, email=new_user_mail)
+
+        make_simple_assertion(
+            expected_value=None,
+            actual_value=potentialy_created_user_data,
+            assertion_name=f"Пользователь с переданным в запросе email не был создан"
         )
 
 
