@@ -1,9 +1,10 @@
-import uuid
 from enum import Enum
-from typing import Literal, Annotated
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr
+
+from models.default_error import DefaultError
 
 
 class DatabaseUserDataModel(BaseModel):
@@ -44,6 +45,8 @@ class CreatedUserDataBundle(BaseModel):
     surname: str
     """ Фамилия пользователя """
 
+class CreateUserWithUsedEmailErrorResponse(DefaultError):
+    status: Literal["EMAIL_IS_NOT_AVAILABLE"]
 
 class CreateUserSuccessfulResponse(BaseModel):
     """ Ожидаемая модель ответа при успешном создании пользователя """
@@ -54,7 +57,6 @@ class UserPermissionsChangeBadRequestReason(str, Enum):
     """ Возможные варианты описания ошибки при попытке повторного назначения пользователю существующего уровня прав """
     user_is_already_has_admin_permissions = "User is already has administrator permissions"
     user_is_already_has_no_admin_permissions = "User is already has no administrator permissions"
-
 
 class UserPermissionsChangeBadRequestResponse(BaseModel):
     """ Ожидаемая модель ответа при попытке повторного назначения пользователю существующего уровня прав """

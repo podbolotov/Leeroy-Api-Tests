@@ -1,7 +1,5 @@
 from uuid import UUID
 
-from dns.e164 import query
-
 from database.db_baseclass import Database
 from models.users import DatabaseUserDataModel
 from data.framework_variables import FrameworkVariables as FrVars
@@ -92,3 +90,24 @@ def bulk_change_administrator_permissions(db: Database, ids: tuple[UUID], is_adm
         db.commit()
     else:
         pass
+
+
+def get_users_count(db: Database, mode: str = 'email_distinct') -> int:
+    if mode == 'email_distinct':
+        sql_query = "SELECT DISTINCT email FROM public.users;"
+    elif mode == 'table_count':
+        sql_query = "SELECT count(*) FROM public.users;"
+    else:
+        raise ValueError("Unexpected mode value!")
+
+    db_result = db.execute_db_request(
+        query=sql_query,
+        fetchmode='all'
+    )
+
+    if mode == 'email_distinct':
+        users_count = len(db_result)
+    else:
+        users_count = int(db_result[0][0])
+
+    return users_count
