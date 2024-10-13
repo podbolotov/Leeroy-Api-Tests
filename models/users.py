@@ -1,8 +1,8 @@
 from enum import Enum
-from typing import Literal
+from typing import Literal, Optional, Annotated
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 from models.default_error import DefaultError
 
@@ -85,3 +85,18 @@ class UserPermissionsChangeSuccessfulResponse(BaseModel):
 class DeleteUserSuccessfulResponse(BaseModel):
     """ Ожидаемая модель ответа при успешном удалении пользователя """
     status: Literal["User successfully deleted"]
+
+class GetUserDataSuccessfulResponse(BaseModel):
+    """ Ожидаемая модель ответа на запрос информации о пользователе """
+    email: EmailStr
+    firstname: str = Field(min_length=1, max_length=99)
+    middlename: Optional[Annotated[str, Field(min_length=1, max_length=99)]] = None
+    surname: str = Field(min_length=1, max_length=99)
+    is_admin: bool
+    id: UUID
+
+class GetUserDataForbiddenError(DefaultError):
+    """ Ожидаемая модель ответа при запросе данных о другом пользователе пользователем, не наделённым правами
+     администратора """
+    status: Literal["FORBIDDEN"]
+    description: Literal["Only administrators can find information about another users"]
