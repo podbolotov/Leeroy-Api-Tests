@@ -10,8 +10,7 @@
 
 ## Дополнительная информация
 
-Пример отчёта, генерируемого после прохождения тестов, можно загрузить из данного репозитория по 
-<a href="https://raw.githubusercontent.com/Podbolotov/Leeroy-Api-Tests/main/docs/files/example_report.html" download="example_report.html" target="_blank">следующей ссылке</a>.
+Пример отчёта, генерируемого после прохождения тестов, можно загрузить из данного репозитория по [следующей ссылке](https://raw.githubusercontent.com/Podbolotov/Leeroy-Api-Tests/main/docs/files/example_report.html) (используйте "сохранить как").
 
 ----
 ### Копирайт
