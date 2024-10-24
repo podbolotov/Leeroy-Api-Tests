@@ -37,3 +37,48 @@ def get_refresh_token_by_id(db: Database, token_id: UUID) -> DatabaseRefreshToke
         revoked=db_result[5]
     )
     return token_data
+
+def change_jwt_token_revoke_status(
+        db: Database,
+        token_id: UUID,
+        new_value: bool,
+        token_type: str = 'access_token'
+) -> bool:
+    """
+    Данный метод реализует изменение статуса отзыва токена (как токена доступа, так и токена обновления) в базе данных.
+
+    :param db: Экземпляр класса Database, предоставляющий подключение и методы взаимодействия с БД.
+    :param token_id: UUIDv4 идентификатор токена, статус отзыва которого необходимо изменить.
+    :param new_value: Желаемое значение статуса отзыва токена (True - токен отозван, False - токен не отозван).
+    :param token_type: Тип токена ("access_token" или "refresh_token")
+    :return: При отсутствии явных ошибок при исполнении запроса функция возвращает булево значение True.
+    :raises RuntimeError: Исключение, возвращаемое в случае, если при попытке изменения статуса отзыва токена произошла
+        ошибка.
+    """
+
+    try:
+        if token_type == 'access_token':
+
+            db.execute_db_request(
+                query="UPDATE public.access_tokens SET revoked = %s::boolean WHERE id = %s;",
+                params=(str(new_value), str(token_id),),
+                fetchmode='nofetch'
+            )
+            db.commit()
+
+        elif token_type == 'refresh_token':
+
+            db.execute_db_request(
+                query="UPDATE public.refresh_tokens SET revoked = %s::boolean WHERE id = %s;",
+                params=(str(new_value), str(token_id),),
+                fetchmode='nofetch'
+            )
+            db.commit()
+
+        else:
+            raise ValueError("Unsupported token type")
+
+        return True
+
+    except Exception as e:
+        raise RuntimeError(f'Token revoke status changing is failed!\n{e}')
