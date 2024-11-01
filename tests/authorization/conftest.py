@@ -67,11 +67,11 @@ def get_random_endpoint_data() -> RandomEndpointData:
 @pytest.fixture(scope="function")
 def make_access_token_with_incorrect_signature(create_and_authorize_user) -> str:
     """
-    Данная фикстура переподписывает корректный токен, полученный при авторизации пользователя, при помощи заведомо
-    некорректной подписи.
+    Данная фикстура переподписывает корректный токен доступа, полученный при авторизации пользователя, при помощи
+    заведомо некорректной подписи.
 
     :param create_and_authorize_user: Ссылка на фикстуру создания и авторизации пользователя.
-    :return: JWT-токен с корректным форматом, но некорректной подписью.
+    :return: JWT-токен доступа с корректным форматом, но некорректной подписью.
     """
     random_incorrect_signature = str(uuid.uuid4().hex)
     initial_correct_access_token = create_and_authorize_user.access_token
@@ -95,9 +95,42 @@ def make_access_token_with_incorrect_signature(create_and_authorize_user) -> str
 
     return resigned_access_token_with_incorrect_signature
 
+@pytest.fixture(scope="function")
+def make_refresh_token_with_incorrect_signature(create_and_authorize_user) -> str:
+    """
+    Данная фикстура переподписывает корректный токен обновления, полученный при авторизации пользователя, при помощи
+    заведомо некорректной подписи.
+
+    :param create_and_authorize_user: Ссылка на фикстуру создания и авторизации пользователя.
+    :return: JWT-токен обновления с корректным форматом, но некорректной подписью.
+    """
+    random_incorrect_signature = str(uuid.uuid4().hex)
+    initial_correct_refresh_token = create_and_authorize_user.refresh_token
+    decoded_refresh_token = validate_and_decode_token(initial_correct_refresh_token)
+    token_payload = {
+        "id": str(decoded_refresh_token.id),
+        "user_id": str(decoded_refresh_token.user_id),
+        "issued_at": str(decoded_refresh_token.issued_at),
+        "expired_at": str(decoded_refresh_token.expired_at)
+    }
+
+    resigned_refresh_token_with_incorrect_signature = jwt.encode(
+        token_payload,
+        random_incorrect_signature,
+        algorithm="HS256"
+    )
+
+    allure.attach(create_and_authorize_user.refresh_token, "Изначальный токен обновления")
+    allure.attach(random_incorrect_signature, "Использованная некорректная подпись")
+    allure.attach(
+        resigned_refresh_token_with_incorrect_signature, "Токен обновления, подписанный некорректной подписью"
+    )
+
+    return resigned_refresh_token_with_incorrect_signature
+
 
 @pytest.fixture(scope="function")
-def make_malformed_access_token() -> str:
+def make_malformed_jwt_token() -> str:
     """
     Данная фикстура генерирует строку, визуально напоминающую JWT-токен, но не являющуюся им.
     :return: Заведомо некорректный JWT-токен.
@@ -137,9 +170,38 @@ def make_expired_access_token(create_and_authorize_user) -> str:
 
 
 @pytest.fixture(scope="function")
+def make_expired_refresh_token(create_and_authorize_user) -> str:
+    """
+    Данная фикстура меняет значение времени истечения в JWT-токене таким образом, чтобы он считался истёкшим.
+    :param create_and_authorize_user: Ссылка на фикстуру создания и авторизации пользователя.
+    :return: Корректный JWT-токен с изменённым временем истечения.
+    """
+    initial_correct_refresh_token = create_and_authorize_user.refresh_token
+    decoded_refresh_token = validate_and_decode_token(initial_correct_refresh_token)
+    token_payload = {
+        "id": str(decoded_refresh_token.id),
+        "user_id": str(decoded_refresh_token.user_id),
+        "issued_at": str(decoded_refresh_token.issued_at),
+        "expired_at": str(decoded_refresh_token.issued_at)  # в качестве времени истечения присваивается время выпуска
+    }
+
+    resigned_refresh_token_with_modified_expired_at_time = jwt.encode(
+        token_payload,
+        FrVars.JWT_SIGNATURE_SECRET,
+        algorithm="HS256"
+    )
+
+    allure.attach(create_and_authorize_user.refresh_token, "Изначальный токен обновления")
+    allure.attach(token_payload['expired_at'], "Новое время истечения для переподписанного токена")
+    allure.attach(resigned_refresh_token_with_modified_expired_at_time, "Токен доступа, c изменённым временем выпуска")
+
+    return resigned_refresh_token_with_modified_expired_at_time
+
+
+@pytest.fixture(scope="function")
 def make_unavailable_in_db_access_token(create_and_authorize_user) -> str:
     """
-    Данная фикстура меняет значение идентификатора в JWT-токене таким образом, чтобы его нельзя было найти в БД.
+    Данная фикстура меняет значение идентификатора в JWT-токене доступа таким образом, чтобы его нельзя было найти в БД.
     :param create_and_authorize_user: Ссылка на фикстуру создания и авторизации пользователя.
     :return: Корректный JWT-токен с изменённым идентификатором.
     """
@@ -166,6 +228,36 @@ def make_unavailable_in_db_access_token(create_and_authorize_user) -> str:
 
 
 @pytest.fixture(scope="function")
+def make_unavailable_in_db_refresh_token(create_and_authorize_user) -> str:
+    """
+    Данная фикстура меняет значение идентификатора в JWT-токене обновления таким образом, чтобы его нельзя было найти
+    в БД.
+    :param create_and_authorize_user: Ссылка на фикстуру создания и авторизации пользователя.
+    :return: Корректный JWT-токен с изменённым идентификатором.
+    """
+    initial_correct_refresh_token = create_and_authorize_user.refresh_token
+    decoded_refresh_token = validate_and_decode_token(initial_correct_refresh_token)
+    token_payload = {
+        "id": str(uuid.uuid4()),  # для невозможности обнаружения токена в БД ему присваивается новый ID
+        "user_id": str(decoded_refresh_token.user_id),
+        "issued_at": str(decoded_refresh_token.issued_at),
+        "expired_at": str(decoded_refresh_token.expired_at)
+    }
+
+    resigned_refresh_token_with_modified_id = jwt.encode(
+        token_payload,
+        FrVars.JWT_SIGNATURE_SECRET,
+        algorithm="HS256"
+    )
+
+    allure.attach(create_and_authorize_user.refresh_token, "Изначальный токен обновления")
+    allure.attach(token_payload['id'], "Новой ID для переподписанного токена")
+    allure.attach(resigned_refresh_token_with_modified_id, "Токен доступа, c изменённым ID")
+
+    return resigned_refresh_token_with_modified_id
+
+
+@pytest.fixture(scope="function")
 def make_revoked_access_token(database, create_and_authorize_user) -> str:
     """
     Данная фикстура предоставляет токен доступа, статус отзыва которого имеет значение "отозван" в БД.
@@ -175,7 +267,7 @@ def make_revoked_access_token(database, create_and_authorize_user) -> str:
 
     :param database: Ссылка на фикстуру, предоставляющую подключение к БД.
     :param create_and_authorize_user: Ссылка на фикстуру создания и авторизации пользователя.
-    :return: Корректный JWT-токен, помеченный отозванным в БД.
+    :return: Корректный JWT-токен доступа, помеченный отозванным в БД.
     """
     initial_correct_access_token = create_and_authorize_user.access_token
     decoded_access_token = validate_and_decode_token(initial_correct_access_token)
@@ -193,5 +285,37 @@ def make_revoked_access_token(database, create_and_authorize_user) -> str:
         db=database,
         token_id=decoded_access_token.id,
         token_type="access_token",
+        new_value=False
+    )
+
+
+@pytest.fixture(scope="function")
+def make_revoked_refresh_token(database, create_and_authorize_user) -> str:
+    """
+    Данная фикстура предоставляет токен обновления, статус отзыва которого имеет значение "отозван" в БД.
+
+    На стадии уборки данная фикстура возвращает предоставленному ранее токену значение "не отозван", для обеспечения
+    корректной работы стадии уборки фикстуры "create_and_authorize_user".
+
+    :param database: Ссылка на фикстуру, предоставляющую подключение к БД.
+    :param create_and_authorize_user: Ссылка на фикстуру создания и авторизации пользователя.
+    :return: Корректный JWT-токен обновления, помеченный отозванным в БД.
+    """
+    initial_correct_refresh_token = create_and_authorize_user.refresh_token
+    decoded_refresh_token = validate_and_decode_token(initial_correct_refresh_token)
+
+    change_jwt_token_revoke_status(
+        db=database,
+        token_id=decoded_refresh_token.id,
+        token_type="refresh_token",
+        new_value=True
+    )
+
+    yield initial_correct_refresh_token
+
+    change_jwt_token_revoke_status(
+        db=database,
+        token_id=decoded_refresh_token.id,
+        token_type="refresh_token",
         new_value=False
     )

@@ -42,8 +42,34 @@ class AccessTokenErrorTokenRevoked(DefaultError):
     status: Literal["TOKEN_REVOKED"]
     description: Literal["Access-Token is revoked"]
 
+class RefreshTokenErrorTokenBadSignature(DefaultError):
+    """ Ожидаемый ответ при попытке передачи токена обновления с некорректной подписью. """
+    status: Literal["TOKEN_BAD_SIGNATURE"]
+    description: Literal["Refresh-Token has incorrect signature"]
+
+class RefreshTokenErrorTokenMalformed(DefaultError):
+    """ Ожидаемый ответ при попытке передачи повреждённого токена обновления, либо случайных данных не являющимися
+    корректным JWT-токеном. """
+    status: Literal["TOKEN_MALFORMED"]
+    description: Literal["Refresh-Token is malformed or has incorrect format"]
+
+class RefreshTokenErrorTokenExpired(DefaultError):
+    """ Ожидаемый ответ при попытке передачи токена обновления, срок действия которого истёк. """
+    status: Literal["TOKEN_EXPIRED"]
+    description: Literal["Provided Refresh-Token is expired"]
+
+class RefreshTokenErrorTokenNotFoundInDatabase(DefaultError):
+    """ Ожидаемый ответ при попытке передачи токена обновления, запись о выпуске которого не удалось найти в БД. """
+    status: Literal["TOKEN_NOT_FOUND"]
+    description: Literal["Refresh-Token data is not found in database"]
+
+class RefreshTokenErrorTokenRevoked(DefaultError):
+    """ Ожидаемый ответ при попытке передачи токена обновления, имеющего в записи о выпуске в БД признак отзыва. """
+    status: Literal["TOKEN_REVOKED"]
+    description: Literal["Refresh-Token is revoked"]
+
 class AuthSuccessfulResponse(BaseModel):
-    """ Ожидаемая модель ответа для успешной авторизации """
+    """ Ожидаемая модель ответа для успешной авторизации или обновления авторизационных токенов. """
     model_config = ConfigDict(extra="forbid")
 
     access_token: str

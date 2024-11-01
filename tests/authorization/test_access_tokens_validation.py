@@ -53,13 +53,13 @@ class TestAccessTokenValidation:
         "не являющихся токеном доступа."
     )
     def test_malformed_or_incorrect_access_token(
-            self, variable_manager, get_random_endpoint_data, make_malformed_access_token
+            self, variable_manager, get_random_endpoint_data, make_malformed_jwt_token
     ):
         res = requests.request(
             method=get_random_endpoint_data.method,
             url=get_random_endpoint_data.url,
             headers={
-                "Access-Token": make_malformed_access_token
+                "Access-Token": make_malformed_jwt_token
             },
             json=get_random_endpoint_data.json
         )
@@ -77,8 +77,8 @@ class TestAccessTokenValidation:
     @allure.title("Ошибка при передаче истёкшего токена")
     @allure.severity(severity_level=allure.severity_level.CRITICAL)
     @allure.description(
-        "Данный тест проверяет отказ в обслуживании при попытке передачи токена, который соответствует формату и имеет "
-        "корректную подпись, если его срок действия уже истёк."
+        "Данный тест проверяет отказ в обслуживании при попытке передачи токена доступа, который соответствует формату и "
+        "имеет корректную подпись, если его срок действия уже истёк."
     )
     def test_expired_access_token(
             self, variable_manager, get_random_endpoint_data, make_expired_access_token
@@ -105,7 +105,7 @@ class TestAccessTokenValidation:
     @allure.title("Ошибка при передаче токена, данных по которому нет в базе данных")
     @allure.severity(severity_level=allure.severity_level.CRITICAL)
     @allure.description(
-        "Данный тест проверяет отказ в обслуживании при попытке передачи токена, являющегося корректным и не "
+        "Данный тест проверяет отказ в обслуживании при попытке передачи токена доступа, являющегося корректным и не "
         "являющегося истёкшим, при условии, что запись о нём в базе данных найти не удалось."
     )
     def test_access_token_not_found(
@@ -134,7 +134,8 @@ class TestAccessTokenValidation:
     @allure.severity(severity_level=allure.severity_level.CRITICAL)
     @allure.description(
         "Данный тест проверяет отказ в обслуживании при попытке передачи неистёкшего и соответствующего ожидаемому "
-        "формату токена, запись о котором удалось найти в БД, при условии, что в БД данный токен имеет признак отзыва."
+        "формату токена доступа, запись о котором удалось найти в БД, при условии, что в БД данный токен имеет "
+        "признак отзыва."
     )
     def test_access_token_revoked(
             self, variable_manager, get_random_endpoint_data, make_revoked_access_token
