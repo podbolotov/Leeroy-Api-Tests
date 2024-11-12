@@ -31,6 +31,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /code
 
 COPY . /code
+RUN mkdir /code/allure-results
 
-CMD ["pytest", "./tests", "--alluredir=./allure-results", "-s"]
+CMD ["pytest", "/code/tests", "--alluredir=/code/allure-results", "-s"]
 CMD ["allure", "generate", "/code/allure-results", "--clean", "--output", "/code/allure-report", "--single-file", "--name", "Leeroy Api Tests"]
