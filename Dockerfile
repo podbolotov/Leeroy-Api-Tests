@@ -18,8 +18,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Вторая стадия
 FROM python:3.12.5-alpine
 RUN apk update && \
-    apk add libpq-dev && \
-    apk add openjdk21
+    apk add libpq-dev openjdk21 tzdata
 
 COPY --from=builder /opt/venv /opt/venv
 COPY --from=builder /opt/allure2 /opt/allure2
@@ -35,4 +34,4 @@ RUN mkdir /code/allure-results
 
 CMD pytest /code/tests --alluredir=/code/allure-results -s ; \
 allure generate /code/allure-results --clean --output /code/allure-report --single-file --name "Leeroy Api Tests" ; \
-mv /code/allure-report/index.html /code/allure-report/$(date +%Y-%m-%d_%H-%M-%S).html
+mv /code/allure-report/index.html /code/allure-report/test-report-$(date +%Y-%m-%d_%H-%M-%S).html

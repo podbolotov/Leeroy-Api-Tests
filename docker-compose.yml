@@ -5,7 +5,7 @@ services:
   database:
     image: postgres:16.4-alpine3.20
     ports:
-      - 5432:5432
+      - "5432:5432"
     volumes:
       - database_storage:/var/lib/postgresql/data
     environment:
@@ -45,6 +45,7 @@ services:
     links:
       - database
     environment:
+      - TZ=Etc/GMT-5
       - APP_HOST=http://leeroy:8080
       - DB_HOST=database
       - DB_PORT=5432
@@ -55,6 +56,6 @@ services:
       - ACCESS_TOKEN_TTL_IN_MINUTES=60
       - REFRESH_TOKEN_TTL_IN_MINUTES=43200
     volumes:
-      - /home/debian/llce-t-reports:/code/allure-report
+      - ./llce-t-reports:/code/allure-report
 volumes:
   database_storage:
