@@ -33,4 +33,5 @@ WORKDIR /code
 COPY . /code
 RUN mkdir /code/allure-results
 
-CMD ["pytest", "/code/tests", "--alluredir=/code/allure-results", "-s", "&&", "allure", "generate", "/code/allure-results", "--clean", "--output", "/code/allure-report", "--single-file", "--name", "Leeroy Api Tests"]
+CMD pytest /code/tests --alluredir=/code/allure-results -s ; allure generate /code/allure-results --clean --output /code/allure-report --single-file --name "Leeroy Api Tests"
+# CMD ["allure", "generate", "/code/allure-results", "--clean", "--output", "/code/allure-report", "--single-file", "--name", "Leeroy Api Tests"]
