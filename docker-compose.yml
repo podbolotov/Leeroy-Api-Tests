@@ -16,47 +16,14 @@ services:
       timeout: 5s
       retries: 5
 
-  pgadmin:
-      image: dpage/pgadmin4:8.11.0
-      depends_on:
-        database:
-          condition: service_healthy
-      ports:
-        - 8081:80
-      environment:
-        - PGADMIN_DEFAULT_EMAIL=leroy_admin@contoso.com
-        - PGADMIN_DEFAULT_PASSWORD=DeF4u1t_pwd
-        - PGADMIN_CONFIG_SERVER_MODE=False
-        - PGADMIN_CONFIG_UPGRADE_CHECK_ENABLED=False
-        - PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED=False
-      entrypoint: >
-        /bin/sh -c '
-        echo "database:5432:*:postgres:postgres" > /tmp/pgpass;
-        chmod 600 /tmp/pgpass;
-        echo "{\"Servers\":{\"1\":{\"Name\":\"Leeroy DBMS\",\"Group\":\"Servers\",\"Host\":\"database\",
-        \"Port\":5432,\"MaintenanceDB\":\"postgres\",\"Username\":\"postgres\",\"PassFile\":\"/tmp/pgpass\",
-        \"SSLMode\":\"prefer\"}}}" > /pgadmin4/servers.json;
-        /entrypoint.sh
-        '
-      user: root
-      healthcheck:
-        test: [ "CMD", "wget", "-O", "-", "http://localhost:80/misc/ping" ]
-        interval: 10s
-        timeout: 5s
-        retries: 5
-      logging:
-        driver: none
-
   leeroy:
-    build: https://github.com/podbolotov/Leeroy.git
+    build: https://github.com/podbolotov/Leeroy.git#main
     image: leeroy:1.0.0
     depends_on:
       database:
         condition: service_healthy
-      pgadmin:
-        condition: service_healthy
     ports:
-      - 8080:8080
+      - "8080:8080"
     links:
       - database
     environment:
@@ -70,13 +37,11 @@ services:
       - REFRESH_TOKEN_TTL_IN_MINUTES=43200
 
   leeroy-api-tests:
-    build: https://github.com/podbolotov/Leeroy-Api-Tests.git#feature/containerization
+    build: https://github.com/podbolotov/Leeroy-Api-Tests.git#main
     image: leeroy-api-tests:1.0.0
     depends_on:
-      database:
-        condition: service_healthy
-      pgadmin:
-        condition: service_healthy
+      leeroy:
+        condition: service_started
     links:
       - database
     environment:
@@ -89,6 +54,7 @@ services:
       - JWT_SIGNATURE_SECRET=DefaultJSONWebTokenSignatureSecret
       - ACCESS_TOKEN_TTL_IN_MINUTES=60
       - REFRESH_TOKEN_TTL_IN_MINUTES=43200
-
+    volumes:
+      - /home/debian/llce-t-reports:/code/allure-report
 volumes:
   database_storage:
