@@ -45,6 +45,12 @@ class CreatedUserDataBundle(BaseModel):
     surname: str
     """ Фамилия пользователя """
 
+class CreatedUserDataBundleWithTokens(CreatedUserDataBundle):
+    access_token: str
+    """ Токен доступа """
+    refresh_token: str
+    """ Токен обновления """
+
 class CreateUserWithUsedEmailErrorResponse(DefaultError):
     status: Literal["EMAIL_IS_NOT_AVAILABLE"]
 

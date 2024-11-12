@@ -12,7 +12,8 @@ from helpers.varirable_manager import VariableManager
 from database.db_baseclass import Database
 from data.framework_variables import FrameworkVariables as FrVars
 from models.authorization import AuthSuccessfulResponse
-from models.users import CreatedUserDataBundle, CreateUserSuccessfulResponse, DeleteUserSuccessfulResponse
+from models.users import CreatedUserDataBundle, CreateUserSuccessfulResponse, DeleteUserSuccessfulResponse, \
+    CreatedUserDataBundleWithTokens
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -295,16 +296,25 @@ def create_second_user(database, authorize_administrator) -> CreatedUserDataBund
         )
 
 @pytest.fixture(scope="function")
-def create_and_authorize_user(create_user) -> AuthSuccessfulResponse:
+def create_and_authorize_user(create_user, request) -> CreatedUserDataBundleWithTokens:
     """
     Данная фикстура обеспечивает создание пользователя без прав администратора и его авторизацию, а также его выход из
     системы и удаление после завершения тестирования.
     Для создания пользователя данная фикстура вызывает существующую фикстуру "create_user", реализуя на своей стороне
     только авторизацию и выход из системы.
+
+    Выход из системы, реализуемый этой фикстурой, может быть пропущен путём параметризации фикстуры следующим образом::
+
+        @pytest.mark.parametrize("create_and_authorize_user", ["fixture logout should be skipped"], indirect=True)
+
     :param create_user: Ссылка на фикстуру "create_user".
         Используется для создания и удаления пользователя.
+    :param request: Ссылка на объект вызова фикстуры.
+        Если в параметре передана строка "fixture logout should be skipped", то вызов эндпоинта DELETE /logout на этапе
+        уборки будет пропущен.
     :return: Набор данных зарегистрированного пользователя.
     """
+    logout_skip_directive = getattr(request, 'param', None)
     res = requests.post(
         url=FrVars.APP_HOST + "/authorize",
         json={
@@ -325,20 +335,37 @@ def create_and_authorize_user(create_user) -> AuthSuccessfulResponse:
         data=res.json()
     )
 
-    yield serialized_response
+    yield CreatedUserDataBundleWithTokens(
+        user_id=create_user.user_id,
+        email=create_user.email,
+        firstname=create_user.firstname,
+        middlename=create_user.middlename,
+        password=create_user.password,
+        surname=create_user.surname,
+        access_token=serialized_response.access_token,
+        refresh_token=serialized_response.refresh_token
+    )
 
-    res = requests.delete(
-        url=FrVars.APP_HOST + "/logout",
-        headers={
-            "Access-Token": serialized_response.access_token
-        }
-    )
-    attach_request_data_to_report(res)
-    make_simple_assertion(
-        expected_value=200,
-        actual_value=res.status_code,
-        assertion_name="Код ответа на запрос фикстуры"
-    )
+    # Данное условие реализует возможность пропуска выхода из учётной записи путём передачи в значении параметра
+    # фикстуры "create_and_authorize_user" строки с содержимым "fixture logout should be skipped".
+    if logout_skip_directive == "fixture logout should be skipped":
+        allure.attach(
+            f"Параметр фикстуры получил значение \"{request.param}\"",
+            "Выход из учётной записи был пропущен"
+        )
+    else:
+        res = requests.delete(
+            url=FrVars.APP_HOST + "/logout",
+            headers={
+                "Access-Token": serialized_response.access_token
+            }
+        )
+        attach_request_data_to_report(res)
+        make_simple_assertion(
+            expected_value=200,
+            actual_value=res.status_code,
+            assertion_name="Код ответа на запрос фикстуры"
+        )
 
 # TODO: Оптимизировать фикстуры создания пользователей таким образом, чтобы одна фикстура создавала и удаляла сразу
 #  двоих тестовых пользователей.
@@ -388,14 +415,15 @@ def create_and_authorize_second_user(create_second_user) -> AuthSuccessfulRespon
         assertion_name="Код ответа на запрос фикстуры"
     )
 
+
 @pytest.fixture(scope="function")
 def logout(variable_manager) -> None:
     """
     Данная фикстура обеспечивает вызов эндпоинта /logout для тестовых функций, которые завершились корректной
     авторизацией и требуют погашения выданных токенов.
 
-    Обратите внимание, что данная фиксура читает другую фикстуру, variable_manager, и для успешной работы фикстуры
-    logout требуется, чтобы перед её вызовом в variable_manager была записана переменная 'access_token' c токеном,
+    Обратите внимание, что данная фикстура читает другую фикстуру, variable_manager, и для успешной работы фикстуры
+    logout требуется, чтобы перед её вызовом в variable_manager была записана переменная 'access_token' с токеном,
     который необходимо погасить.
 
     :param variable_manager: Ссылка на фикстуру "variable_manager"
@@ -428,7 +456,7 @@ def delete_user(database, variable_manager, authorize_administrator) -> None:
     Данная фикстура обеспечивает вызов эндпоинта DELETE /users/{user_id} для тестовых функций, которые завершились
     корректным созданием пользователя и требуют его удаления.
 
-    Обратите внимание, что данная фиксура читает другую фикстуру, variable_manager, и для успешной работы фикстуры
+    Обратите внимание, что данная фикстура читает другую фикстуру, variable_manager, и для успешной работы фикстуры
     delete_user требуется, чтобы перед её вызовом в variable_manager была записана переменная 'user_id' c ID,
     пользователя, которого необходимо удалить.
 
