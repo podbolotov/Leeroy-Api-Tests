@@ -7,7 +7,7 @@ RUN apk update && \
 RUN python -m venv /opt/venv
 
 RUN wget https://github.com/allure-framework/allure2/releases/download/2.30.0/allure-2.30.0.tgz && \
-    mkdir /opt/allure2 \
+    mkdir /opt/allure2 && \
     tar xf ./allure-2.30.0.tgz /opt/allure2
 
 ENV PATH="/opt/venv/bin:$PATH"
