@@ -83,7 +83,7 @@ def authorize_administrator(variable_manager) -> AuthSuccessfulResponse:
 
 
 @pytest.fixture(scope="function")
-def create_user(database, authorize_administrator) -> CreatedUserDataBundle:
+def create_user(database, authorize_administrator, request) -> CreatedUserDataBundle:
     """
     Данная фикстура обеспечивает создание пользователя без прав администратора и его удаление после завершения
     тестирования.
@@ -101,6 +101,8 @@ def create_user(database, authorize_administrator) -> CreatedUserDataBundle:
     new_user_random_middlename = random.choice([fake.first_name(), None])
     new_user_random_surname = fake.last_name()
     new_user_random_password = fake.password()
+
+    deletion_skip_directive = getattr(request, 'param', None)
 
     # Отправка запроса на создание пользователя
     with allure.step("Создание пользователя"):
@@ -142,18 +144,41 @@ def create_user(database, authorize_administrator) -> CreatedUserDataBundle:
     # Предоставление набора для использования в тестах
     yield created_user_data
 
-    # Стадия очистки
-    # Проверка наличия у пользователя прав администратора
-    user_has_administrator_permissions = get_user_data_by_email(
-        db=database,
-        email=created_user_data.email
-    ).is_admin
 
-    # В случае, если пользователь за время жизни приобрёл права администратора - отзыв прав администратора
-    if user_has_administrator_permissions is True:
-        with allure.step("Отзыв у удаляемого пользователя прав администратора"):
-            res = requests.patch(
-                url=FrVars.APP_HOST + f"/users/admin-permissions/{created_user_data.user_id}/revoke",
+    if deletion_skip_directive == "fixture user deletion should be skipped":
+        allure.attach(
+            f"Параметр фикстуры получил значение \"{request.param}\"",
+            "Удаление пользователя было пропущено"
+        )
+    else:
+        # Стадия очистки
+        # Проверка наличия у пользователя прав администратора
+        user_has_administrator_permissions = get_user_data_by_email(
+            db=database,
+            email=created_user_data.email
+        ).is_admin
+
+        # В случае, если пользователь за время жизни приобрёл права администратора - отзыв прав администратора
+        if user_has_administrator_permissions is True:
+            with allure.step("Отзыв у удаляемого пользователя прав администратора"):
+                res = requests.patch(
+                    url=FrVars.APP_HOST + f"/users/admin-permissions/{created_user_data.user_id}/revoke",
+                    headers={
+                        "Access-Token": authorize_administrator.access_token
+                    }
+                )
+                attach_request_data_to_report(res)
+
+                make_simple_assertion(
+                    expected_value=200,
+                    actual_value=res.status_code,
+                    assertion_name="Код ответа на запрос отзыва прав администратора у пользователя в фикстуре"
+                )
+
+        # Отправка запроса на удаление пользователя
+        with allure.step("Удаление пользователя"):
+            res = requests.delete(
+                url=FrVars.APP_HOST + f"/users/{created_user_data.user_id}",
                 headers={
                     "Access-Token": authorize_administrator.access_token
                 }
@@ -163,29 +188,13 @@ def create_user(database, authorize_administrator) -> CreatedUserDataBundle:
             make_simple_assertion(
                 expected_value=200,
                 actual_value=res.status_code,
-                assertion_name="Код ответа на запрос отзыва прав администратора у пользователя в фикстуре"
+                assertion_name="Код ответа на запрос удаления пользователя в фикстуре"
             )
 
-    # Отправка запроса на удаление пользователя
-    with allure.step("Удаление пользователя"):
-        res = requests.delete(
-            url=FrVars.APP_HOST + f"/users/{created_user_data.user_id}",
-            headers={
-                "Access-Token": authorize_administrator.access_token
-            }
-        )
-        attach_request_data_to_report(res)
-
-        make_simple_assertion(
-            expected_value=200,
-            actual_value=res.status_code,
-            assertion_name="Код ответа на запрос удаления пользователя в фикстуре"
-        )
-
-        validate_response_model(
-            model=DeleteUserSuccessfulResponse,
-            data=res.json()
-        )
+            validate_response_model(
+                model=DeleteUserSuccessfulResponse,
+                data=res.json()
+            )
 
 
 # TODO: Оптимизировать фикстуры создания пользователей таким образом, чтобы одна фикстура создавала и удаляла сразу
