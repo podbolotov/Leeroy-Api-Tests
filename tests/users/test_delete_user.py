@@ -1,18 +1,15 @@
-import random
-
 import allure
 import pytest
 import requests
 from faker import Faker
 
 from data.framework_variables import FrameworkVariables as FrVars
-from database.users import get_user_data_by_email, get_users_count
+from database.tokens import get_tokens_count
+from database.users import get_user_data_by_id
 from helpers.allure_report import attach_request_data_to_report
-from helpers.assertions import make_simple_assertion, make_bulk_assertion, AssertionBundle as Assertion
-from helpers.json_tools import format_json
-from helpers.password_tools import hash_password
+from helpers.assertions import make_simple_assertion, make_bulk_assertion, AssertionBundle as Assertion, AssertionModes
 from helpers.validate_response import validate_response_model
-from models.users import CreateUserSuccessfulResponse, CreateUserWithUsedEmailErrorResponse, CreateUserForbiddenResponse
+from models.users import DeleteUserSuccessfulResponse
 
 fake = Faker()
 
@@ -37,6 +34,21 @@ class TestDeleteUsers:
     def test_successful_user_deletion(
             self, database, variable_manager, authorize_administrator, create_user, create_and_authorize_user
     ):
+        # Извлечение имеющихся в БД данных пользователя, а также количества токенов доступа и количества токенов
+        # обновления.
+        user_data_from_db_before_delete = get_user_data_by_id(db=database, user_id=create_and_authorize_user.user_id)
+        access_tokens_count_before_delete = get_tokens_count(
+            db=database,
+            user_id=create_and_authorize_user.user_id,
+            token_type='access_token'
+        )
+        refresh_tokens_count_before_delete = get_tokens_count(
+            db=database,
+            user_id=create_and_authorize_user.user_id,
+            token_type='refresh_token'
+        )
+
+        # Отправка запроса на удаление пользователя.
         res = requests.delete(
             url=FrVars.APP_HOST + f"/users/{create_and_authorize_user.user_id}",
             headers={
@@ -48,53 +60,68 @@ class TestDeleteUsers:
         make_simple_assertion(expected_value=200, actual_value=res.status_code,
                               assertion_name="Проверка кода ответа")
 
-        # serialized_response = validate_response_model(
-        #     model=CreateUserSuccessfulResponse,
-        #     data=res.json()
-        # )
+        # Попытка извлечения данных удалённого пользователя из БД, включая запрос количеств его токенов доступа и
+        # токенов обновления.
+        user_data_from_db_after_delete = get_user_data_by_id(db=database, user_id=create_and_authorize_user.user_id)
+        access_tokens_count_after_delete = get_tokens_count(
+            db=database,
+            user_id=create_and_authorize_user.user_id,
+            token_type='access_token'
+        )
+        refresh_tokens_count_after_delete = get_tokens_count(
+            db=database,
+            user_id=create_and_authorize_user.user_id,
+            token_type='refresh_token'
+        )
 
-        # user_data_from_db = get_user_data_by_email(db=database, email=new_user_random_email)
-        #
-        # with allure.step("Верификация сохранённых в БД данных пользователя"):
-        #     allure.attach(
-        #         format_json(user_data_from_db.model_dump_json()),
-        #         'Данные созданного пользователя из БД'
-        #     )
-        #
-        #     make_bulk_assertion(
-        #         group_name="Верификация данных пользователя",
-        #         data=[
-        #             Assertion(
-        #                 expected_value=serialized_response.user_id,
-        #                 actual_value=user_data_from_db.id,
-        #                 assertion_name="ID созданного пользователя соответствует полученному в ответе"
-        #             ),
-        #             Assertion(
-        #                 expected_value=new_user_random_firstname,
-        #                 actual_value=user_data_from_db.firstname,
-        #                 assertion_name="Имя пользователя соответствует переданному в запросе"
-        #             ),
-        #             Assertion(
-        #                 expected_value=new_user_random_middlename,
-        #                 actual_value=user_data_from_db.middlename,
-        #                 assertion_name="Отчество / среднее имя пользователя соответствует переданному в запросе"
-        #             ),
-        #             Assertion(
-        #                 expected_value=new_user_random_surname,
-        #                 actual_value=user_data_from_db.surname,
-        #                 assertion_name="Фамилия пользователя соответствует переданной в запросе"
-        #             ),
-        #             Assertion(
-        #                 expected_value=hash_password(new_user_random_password),
-        #                 actual_value=user_data_from_db.hashed_password,
-        #                 assertion_name="Хэш пароля идентичен результату хэширования на стороне тестового фреймворка"
-        #             ),
-        #             Assertion(
-        #                 expected_value=False,
-        #                 actual_value=user_data_from_db.is_admin,
-        #                 assertion_name="Созданный пользователь не является администратором"
-        #             )
-        #         ])
-        #
-        # # Переменная user_id назначается для дальнейшей обработки в фикстуре delete_user.
-        # variable_manager.set("user_id", serialized_response.user_id)
+        validate_response_model(
+            model=DeleteUserSuccessfulResponse,
+            data=res.json()
+        )
+
+        make_bulk_assertion(
+            group_name="Верификация состояния пользователя в БД до удаления",
+            data=[
+                Assertion(
+                    expected_value=None,
+                    actual_value=user_data_from_db_before_delete,
+                    assertion_name="Данные пользователя должны существовать в БД",
+                    assertion_mode=AssertionModes.VALUES_ARE_NOT_EQUAL
+                ),
+                Assertion(
+                    expected_value=1,
+                    actual_value=access_tokens_count_before_delete,
+                    assertion_name="В БД должен существовать по меньшей мере один токен доступа",
+                    assertion_mode=AssertionModes.ACTUAL_VALUE_GREATER_THAN_EXPECTED_OR_EQUAL_TO_IT
+                ),
+                Assertion(
+                    expected_value=1,
+                    actual_value=refresh_tokens_count_before_delete,
+                    assertion_name="В БД должен существовать по меньшей мере один токен обновления",
+                    assertion_mode=AssertionModes.ACTUAL_VALUE_GREATER_THAN_EXPECTED_OR_EQUAL_TO_IT
+                )
+            ])
+
+
+        make_bulk_assertion(
+            group_name="Верификация результатов удаления пользователя из БД",
+            data=[
+                Assertion(
+                    expected_value=None,
+                    actual_value=user_data_from_db_after_delete,
+                    assertion_name="Данных удалённого пользователя не должно существовать в БД",
+                    assertion_mode=AssertionModes.VALUES_ARE_EQUAL
+                ),
+                Assertion(
+                    expected_value=0,
+                    actual_value=access_tokens_count_after_delete,
+                    assertion_name="В БД должен не должно существовать токенов доступа удалённого пользователя",
+                    assertion_mode=AssertionModes.VALUES_ARE_EQUAL
+                ),
+                Assertion(
+                    expected_value=0,
+                    actual_value=refresh_tokens_count_after_delete,
+                    assertion_name="В БД должен не должно существовать токенов обновления удалённого пользователя",
+                    assertion_mode=AssertionModes.VALUES_ARE_EQUAL
+                )
+            ])
