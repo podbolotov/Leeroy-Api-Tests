@@ -35,8 +35,8 @@ class AssertionBundle:
 
     def __init__(
             self,
-            expected_value,
-            actual_value,
+            expected_value: Any,
+            actual_value: Any,
             assertion_name: str,
             assertion_mode: AssertionModes = AssertionModes.VALUES_ARE_EQUAL
     ):
@@ -76,8 +76,13 @@ def make_simple_assertion(
     """
     with allure.step(assertion_name):
 
-        def make_attachment(attachment_expected_value, attachment_actual_value, attachment_operation):
-            allure.attach(f"Ожидаемое значение: [{type(attachment_expected_value).__name__}] "
+        def make_attachment(
+                attachment_expected_value: Any,
+                attachment_actual_value: Any,
+                attachment_operation: str,
+                attachment_expected_value_label: str = "Ожидаемое значение"
+        ):
+            allure.attach(f"{attachment_expected_value_label}: [{type(attachment_expected_value).__name__}] "
                           f"{str(attachment_expected_value)}\n"
                           f"Фактическое значение: [{type(attachment_actual_value).__name__}] "
                           f"{str(attachment_actual_value)}\n"
@@ -101,7 +106,12 @@ def make_simple_assertion(
                 try:
                     operation = 'Проверка отсутствия эквивалентности значений'
                     assert expected_value != actual_value
-                    make_attachment(expected_value, actual_value, operation)
+                    make_attachment(
+                        expected_value,
+                        actual_value,
+                        operation,
+                        attachment_expected_value_label = "Недопустимое значение"
+                    )
                 except Exception as e:
                     make_attachment(expected_value, actual_value, operation)
                     raise AssertionError(

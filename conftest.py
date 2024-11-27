@@ -379,7 +379,7 @@ def create_and_authorize_user(create_user, request) -> CreatedUserDataBundleWith
 # TODO: Оптимизировать фикстуры создания пользователей таким образом, чтобы одна фикстура создавала и удаляла сразу
 #  двоих тестовых пользователей.
 @pytest.fixture(scope="function")
-def create_and_authorize_second_user(create_second_user) -> AuthSuccessfulResponse:
+def create_and_authorize_second_user(create_second_user) -> CreatedUserDataBundleWithTokens:
     """
     Данная фикстура обеспечивает создание ещё одного пользователя без прав администратора и его авторизацию,
     а также его выход из системы и удаление после завершения тестирования.
@@ -409,7 +409,16 @@ def create_and_authorize_second_user(create_second_user) -> AuthSuccessfulRespon
         data=res.json()
     )
 
-    yield serialized_response
+    yield CreatedUserDataBundleWithTokens(
+        user_id=create_second_user.user_id,
+        email=create_second_user.email,
+        firstname=create_second_user.firstname,
+        middlename=create_second_user.middlename,
+        password=create_second_user.password,
+        surname=create_second_user.surname,
+        access_token=serialized_response.access_token,
+        refresh_token=serialized_response.refresh_token
+    )
 
     res = requests.delete(
         url=FrVars.APP_HOST + "/logout",
