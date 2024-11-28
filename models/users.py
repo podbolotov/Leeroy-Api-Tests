@@ -74,7 +74,7 @@ class UserPermissionsChangeBadRequestResponse(BaseModel):
     description: UserPermissionsChangeBadRequestReason
 
 class UserPermissionsChangeLastAdminErrorResponse(BaseModel):
-    """ Ожидаемая модель ответа при отзыва прав администратора у последнего администратора """
+    """ Ожидаемая модель ответа при отзыве прав администратора у последнего администратора """
     status: Literal["FORBIDDEN"]
     description: Literal["Last administrator permissions can not be revoked!"]
 
@@ -91,6 +91,22 @@ class UserPermissionsChangeSuccessfulResponse(BaseModel):
 class DeleteUserSuccessfulResponse(BaseModel):
     """ Ожидаемая модель ответа при успешном удалении пользователя """
     status: Literal["User successfully deleted"]
+
+class DeleteUserLackOfPermissionsErrorResponse(DefaultError):
+    """ Ожидаемая модель ответа при попытке отправке запроса на удаление пользователя от имени пользователя, не
+    имеющего прав администратора """
+    status: Literal["FORBIDDEN"]
+    description: Literal["Only administrators can delete users"]
+
+class DeleteAdministratorForbiddenErrorResponse(DefaultError):
+    """ Ожидаемая модель ответа при попытке удаления пользователя, наделённого правами администратора """
+    status: Literal["FORBIDDEN"]
+    description: Literal["Administrator can not be deleted"]
+
+class GetUserDataNotFoundErrorResponse(DefaultError):
+    """ Ожидаемая модель ответа при попытке передачи в запросе несуществующего ID пользователя """
+    status: str = "NOT_FOUND"
+    description: str
 
 class GetUserDataSuccessfulResponse(BaseModel):
     """ Ожидаемая модель ответа на запрос информации о пользователе """

@@ -38,6 +38,7 @@ def get_refresh_token_by_id(db: Database, token_id: UUID) -> DatabaseRefreshToke
     )
     return token_data
 
+
 def change_jwt_token_revoke_status(
         db: Database,
         token_id: UUID,
@@ -82,3 +83,24 @@ def change_jwt_token_revoke_status(
 
     except Exception as e:
         raise RuntimeError(f'Token revoke status changing is failed!\n{e}')
+
+
+def get_tokens_count(db: Database, user_id: UUID, token_type: str = 'access_token') -> int:
+    if token_type == 'access_token':
+        db_result = db.execute_db_request(
+            query="SELECT count(*) FROM public.access_tokens WHERE user_id = %s;",
+            params=(str(user_id),),
+            fetchmode='one'
+        )
+    elif token_type == 'refresh_token':
+        db_result = db.execute_db_request(
+            query="SELECT count(*) FROM public.access_tokens WHERE user_id = %s;",
+            params=(str(user_id),),
+            fetchmode='one'
+        )
+    else:
+        raise ValueError("Unexpected mode value!")
+
+    user_tokens_count = db_result[0]
+
+    return user_tokens_count

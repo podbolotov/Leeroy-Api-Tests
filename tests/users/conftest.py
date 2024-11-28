@@ -54,7 +54,7 @@ def before_test_user_has_administrator_permissions(
             make_simple_assertion(
                 expected_value=200,
                 actual_value=res.status_code,
-                assertion_name="Код ответа на запрос отзыва прав администратора у пользователя в фикстуре"
+                assertion_name="Код ответа на запрос изменения прав администратора пользователя в фикстуре"
             )
 
     return user_should_be_administrator
