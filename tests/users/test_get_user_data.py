@@ -1,3 +1,5 @@
+import uuid
+
 import allure
 import pytest
 import requests
@@ -9,7 +11,7 @@ from helpers.allure_report import attach_request_data_to_report
 from helpers.assertions import make_simple_assertion, make_bulk_assertion, AssertionBundle as Assertion
 from helpers.jwt_tools import validate_and_decode_token
 from helpers.validate_response import validate_response_model
-from models.users import GetUserDataSuccessfulResponse, GetUserDataForbiddenError
+from models.users import GetUserDataSuccessfulResponse, GetUserDataForbiddenError, GetUserDataNotFoundErrorResponse
 
 fake = Faker()
 
@@ -45,6 +47,40 @@ class TestGetUserData:
         validate_response_model(
             model=GetUserDataForbiddenError,
             data=res.json()
+        )
+
+    @allure.title("Отказ при попытке получения информации о несуществующем пользователе")
+    @allure.severity(severity_level=allure.severity_level.CRITICAL)
+    @allure.description(
+        "Данный тест проверяет корректную обработку ситуации, когда в запросе передан ID пользователя, найти которого "
+        "не удалось.\n\n"
+        "При проведении теста проверяется:\n"
+        "- Соответствие кода ответа ожидаемому\n"
+        "- Соответствие структуры (модели) ответа ожидаемой\n"
+    )
+    def test_non_existent_user_data_get(
+            self, database, variable_manager, authorize_administrator
+    ):
+        unavailable_in_db_user_id = str(uuid.uuid4())
+        res = requests.get(
+            url=f"{FrVars.APP_HOST}/users/{unavailable_in_db_user_id}",
+            headers={
+                "Access-Token": authorize_administrator.access_token
+            }
+        )
+        attach_request_data_to_report(res)
+
+        make_simple_assertion(expected_value=404, actual_value=res.status_code, assertion_name="Проверка кода ответа")
+
+        serialized_model = validate_response_model(
+            model=GetUserDataNotFoundErrorResponse,
+            data=res.json()
+        )
+
+        make_simple_assertion(
+            expected_value=f"User with id {unavailable_in_db_user_id} is not found.",
+            actual_value=serialized_model.description,
+            assertion_name="Детализация ошибки содержит ID пользователя, данных по которому найти не удалось"
         )
 
     @allure.title("Успешное получение информации о другом пользователе")
