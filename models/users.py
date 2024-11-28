@@ -98,6 +98,16 @@ class DeleteUserLackOfPermissionsErrorResponse(DefaultError):
     status: Literal["FORBIDDEN"]
     description: Literal["Only administrators can delete users"]
 
+class DeleteAdministratorForbiddenErrorResponse(DefaultError):
+    """ Ожидаемая модель ответа при попытке удаления пользователя, наделённого правами администратора """
+    status: Literal["FORBIDDEN"]
+    description: Literal["Administrator can not be deleted"]
+
+class GetUserDataNotFoundErrorResponse(DefaultError):
+    """ Ожидаемая модель ответа при попытке передачи в запросе несуществующего ID пользователя """
+    status: str = "NOT_FOUND"
+    description: str
+
 class GetUserDataSuccessfulResponse(BaseModel):
     """ Ожидаемая модель ответа на запрос информации о пользователе """
     email: EmailStr

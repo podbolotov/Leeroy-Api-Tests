@@ -1,3 +1,5 @@
+import uuid
+
 import allure
 import pytest
 import requests
@@ -10,7 +12,8 @@ from helpers.allure_report import attach_request_data_to_report
 from helpers.assertions import make_simple_assertion, make_bulk_assertion, AssertionBundle as Assertion, AssertionModes
 from helpers.password_tools import hash_password
 from helpers.validate_response import validate_response_model
-from models.users import DeleteUserSuccessfulResponse, DeleteUserLackOfPermissionsErrorResponse
+from models.users import DeleteUserSuccessfulResponse, DeleteUserLackOfPermissionsErrorResponse, \
+    DeleteAdministratorForbiddenErrorResponse, GetUserDataNotFoundErrorResponse
 
 fake = Faker()
 
@@ -53,12 +56,12 @@ class TestDeleteUsers:
         )
         access_tokens_count_after_delete_try = get_tokens_count(
             db=database,
-            user_id=create_and_authorize_user.user_id,
+            user_id=create_and_authorize_second_user.user_id,
             token_type='access_token'
         )
         refresh_tokens_count_after_delete_try = get_tokens_count(
             db=database,
-            user_id=create_and_authorize_user.user_id,
+            user_id=create_and_authorize_second_user.user_id,
             token_type='refresh_token'
         )
 
@@ -120,6 +123,140 @@ class TestDeleteUsers:
                 )
             ])
 
+    @allure.title("Отказ при попытке удаления несуществующего пользователя")
+    @allure.severity(severity_level=allure.severity_level.CRITICAL)
+    @allure.description(
+        "Данный тест проверяет корректность обработки ситуации, в которой запрос на удаление передан с ID, по которому "
+        "не удалось найти пользователя.\n\n"
+        "При проведении теста проверяется:\n"
+        "- Соответствие кода ответа ожидаемому\n"
+        "- Соответствие структуры (модели) ответа ожидаемой"
+    )
+    def test_delete_non_existing_user(
+            self, database, variable_manager, authorize_administrator
+    ):
+        unavailable_in_db_user_id = str(uuid.uuid4())
+        res = requests.delete(
+            url=FrVars.APP_HOST + f"/users/{unavailable_in_db_user_id}",
+            headers={
+                "Access-Token": authorize_administrator.access_token
+            }
+        )
+        attach_request_data_to_report(res)
+
+        make_simple_assertion(expected_value=404, actual_value=res.status_code,
+                              assertion_name="Проверка кода ответа")
+
+        serialized_model = validate_response_model(
+            model=GetUserDataNotFoundErrorResponse,
+            data=res.json()
+        )
+
+        make_simple_assertion(
+            expected_value=f"User with id {unavailable_in_db_user_id} is not found.",
+            actual_value=serialized_model.description,
+            assertion_name="Детализация ошибки содержит ID пользователя, данных по которому найти не удалось"
+        )
+
+    @allure.title("Отказ при попытке удаления пользователя с правами администратора")
+    @allure.severity(severity_level=allure.severity_level.CRITICAL)
+    @allure.description(
+        "Данный тест проверяет невозможность удаления пользователя, являющегося администратором.\n\n"
+        "При проведении теста проверяется:\n"
+        "- Соответствие кода ответа ожидаемому\n"
+        "- Соответствие структуры (модели) ответа ожидаемой\n"
+        "- Сохранность в БД данных пользователя, которого пытались удалить\n"
+        "- Сохранность в БД токенов доступа и токенов обновления пользователя, которого пытались удалить"
+    )
+    @pytest.mark.parametrize('before_test_user_has_administrator_permissions', [True], indirect=True)
+    def test_delete_administrator(
+            self, database, authorize_administrator, create_user, create_and_authorize_user,
+            before_test_user_has_administrator_permissions
+    ):
+        res = requests.delete(
+            url=FrVars.APP_HOST + f"/users/{create_and_authorize_user.user_id}",
+            headers={
+                "Access-Token": authorize_administrator.access_token
+            }
+        )
+        attach_request_data_to_report(res)
+
+        make_simple_assertion(expected_value=403, actual_value=res.status_code,
+                              assertion_name="Проверка кода ответа")
+
+        # Запрос из БД данных пользователя которого пытались удалить, а также количества выпущенных на него токенов
+        # доступа и токенов обновления.
+        user_data_from_db_after_delete_try = get_user_data_by_id(
+            db=database, user_id=create_and_authorize_user.user_id
+        )
+        access_tokens_count_after_delete_try = get_tokens_count(
+            db=database,
+            user_id=create_and_authorize_user.user_id,
+            token_type='access_token'
+        )
+        refresh_tokens_count_after_delete_try = get_tokens_count(
+            db=database,
+            user_id=create_and_authorize_user.user_id,
+            token_type='refresh_token'
+        )
+
+        validate_response_model(
+            model=DeleteAdministratorForbiddenErrorResponse,
+            data=res.json()
+        )
+
+        make_bulk_assertion(
+            group_name="Проверка сохранности данных пользователя",
+            data=[
+                Assertion(
+                    expected_value=create_and_authorize_user.user_id,
+                    actual_value=user_data_from_db_after_delete_try.id,
+                    assertion_name="ID созданного пользователя соответствует установленному при его создании"
+                ),
+                Assertion(
+                    expected_value=create_and_authorize_user.firstname,
+                    actual_value=user_data_from_db_after_delete_try.firstname,
+                    assertion_name="Имя пользователя соответствует установленному при его создании"
+                ),
+                Assertion(
+                    expected_value=create_and_authorize_user.middlename,
+                    actual_value=user_data_from_db_after_delete_try.middlename,
+                    assertion_name="Отчество / среднее имя пользователя соответствует установленному при его создании"
+                ),
+                Assertion(
+                    expected_value=create_and_authorize_user.surname,
+                    actual_value=user_data_from_db_after_delete_try.surname,
+                    assertion_name="Фамилия пользователя соответствует установленной при его создании"
+                ),
+                Assertion(
+                    expected_value=hash_password(create_and_authorize_user.password),
+                    actual_value=user_data_from_db_after_delete_try.hashed_password,
+                    assertion_name="Хэш пароля идентичен результату хеширования на стороне тестового фреймворка"
+                ),
+                Assertion(
+                    expected_value=True,
+                    actual_value=user_data_from_db_after_delete_try.is_admin,
+                    assertion_name="Значение уровня прав пользователя соответствует установленному при его создании"
+                )
+            ])
+
+        make_bulk_assertion(
+            group_name="Проверка наличия в БД токенов доступа и токенов обновления пользователя, "
+                       "которого пытались удалить",
+            data=[
+                Assertion(
+                    expected_value=1,
+                    actual_value=access_tokens_count_after_delete_try,
+                    assertion_name="В БД должен существовать по меньшей мере один токен доступа",
+                    assertion_mode=AssertionModes.ACTUAL_VALUE_GREATER_THAN_EXPECTED_OR_EQUAL_TO_IT
+                ),
+                Assertion(
+                    expected_value=1,
+                    actual_value=refresh_tokens_count_after_delete_try,
+                    assertion_name="В БД должен существовать по меньшей мере один токен обновления",
+                    assertion_mode=AssertionModes.ACTUAL_VALUE_GREATER_THAN_EXPECTED_OR_EQUAL_TO_IT
+                )
+            ])
 
     @allure.title("Успешное удаление пользователя")
     @allure.severity(severity_level=allure.severity_level.CRITICAL)
@@ -203,7 +340,6 @@ class TestDeleteUsers:
                     assertion_mode=AssertionModes.ACTUAL_VALUE_GREATER_THAN_EXPECTED_OR_EQUAL_TO_IT
                 )
             ])
-
 
         make_bulk_assertion(
             group_name="Верификация результатов удаления пользователя из БД",
