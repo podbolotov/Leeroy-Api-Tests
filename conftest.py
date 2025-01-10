@@ -12,6 +12,7 @@ from helpers.varirable_manager import VariableManager
 from database.db_baseclass import Database
 from data.framework_variables import FrameworkVariables as FrVars
 from models.authorization import AuthSuccessfulResponse
+from models.books import DeleteBookSuccessfulResponse
 from models.users import CreatedUserDataBundle, CreateUserSuccessfulResponse, DeleteUserSuccessfulResponse, \
     CreatedUserDataBundleWithTokens
 
@@ -480,7 +481,7 @@ def delete_user(database, variable_manager, authorize_administrator) -> None:
 
     :param database: Ссылка на фикстуру "database".
         Необходима для запроса уровня прав пользователя перед отправкой запроса на удаление пользователя.
-    :param authorize_administrator: Ссылка на фикстуру "variable_manager".
+    :param authorize_administrator: Ссылка на фикстуру "authorize_administrator".
         Используется данной фикстурой, так как удаление пользователя требует авторизации администратора.
     :param variable_manager: Ссылка на фикстуру "variable_manager"
     :return: Данная фикстура ничего не возвращает.
@@ -489,7 +490,7 @@ def delete_user(database, variable_manager, authorize_administrator) -> None:
     try:
         user_id = variable_manager.get('user_id')
     except AttributeError:
-        raise RuntimeError("access_token variable in variable_manager is not setted")
+        raise RuntimeError("user_id variable in variable_manager is not setted")
 
     user_has_administrator_permissions = get_user_data_by_id(
         db=database,
@@ -535,3 +536,48 @@ def delete_user(database, variable_manager, authorize_administrator) -> None:
 
     # Очистка переменной user_id из менеджера переменных
     variable_manager.unset('user_id')
+
+@pytest.fixture(scope="function")
+def delete_book(database, variable_manager, authorize_administrator) -> None:
+    """
+    Данная фикстура обеспечивает вызов эндпоинта DELETE /books/{book_id} для тестовых функций, которые завершились
+    корректным созданием книги и требуют её удаления.
+
+    Обратите внимание, что данная фикстура читает другую фикстуру, variable_manager, и для успешной работы фикстуры
+    delete_book требуется, чтобы перед её вызовом в variable_manager была записана переменная 'book_id' c ID,
+    книги, которую необходимо удалить.
+
+    :param authorize_administrator: Ссылка на фикстуру "authorize_administrator".
+        Используется данной фикстурой, так как удаление книги требует наличия прав администратора.
+    :param variable_manager: Ссылка на фикстуру "variable_manager".
+    :return: Данная фикстура ничего не возвращает.
+    """
+    yield
+    try:
+        book_id = variable_manager.get('book_id')
+    except AttributeError:
+        raise RuntimeError("book_id variable in variable_manager is not setted")
+
+    # Отправка запроса на удаление книги
+    with allure.step("Удаление книги"):
+        res = requests.delete(
+            url=FrVars.APP_HOST + f"/books/{book_id}",
+            headers={
+                "Access-Token": authorize_administrator.access_token
+            }
+        )
+        attach_request_data_to_report(res)
+
+        make_simple_assertion(
+            expected_value=200,
+            actual_value=res.status_code,
+            assertion_name="Код ответа на запрос удаления книги в фикстуре"
+        )
+
+        validate_response_model(
+            model=DeleteBookSuccessfulResponse,
+            data=res.json()
+        )
+
+    # Очистка переменной book_id из менеджера переменных
+    variable_manager.unset('book_id')

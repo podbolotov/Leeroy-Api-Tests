@@ -1,5 +1,5 @@
 import psycopg2
-from psycopg2 import DatabaseError
+from psycopg2 import DatabaseError, extras
 from data.framework_variables import FrameworkVariables as FrVars
 
 
@@ -24,6 +24,8 @@ class Database:
         self.connection = psycopg2.connect(
             dbname='postgres', user=self.user, password=self.password, host=self.host, port=self.port
         )
+        # Регистрируем расширение для работы с нативным UUID
+        psycopg2.extras.register_uuid()
         # Создаём курсор
         self.cursor = self.connection.cursor()
         # Проверяем существование базы данных "leeroy".
@@ -37,7 +39,7 @@ class Database:
             self.connection = psycopg2.connect(
                 dbname='leeroy', user=self.user, password=self.password, host=self.host, port=self.port
             )
-            self.cursor = self.connection.cursor()
+            self.cursor = self.connection.cursor(cursor_factory=extras.NamedTupleCursor)
 
     def execute_db_request(self, query: str, params: tuple = None, fetchmode: str = 'all'):
         self.cursor.execute(query, params)
