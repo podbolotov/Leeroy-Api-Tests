@@ -22,6 +22,10 @@ class DeleteBookSuccessfulResponse(BaseModel):
     """ Ожидаемая модель ответа при успешном удалении книги """
     status: Literal["Book successfully deleted"]
 
+class CreateBookLackOfPermissionError(BaseModel):
+    """ Ожидаемая модель ответа при попытке создания книги пользователем, не имеющим прав администратора """
+    status: Literal["FORBIDDEN"]
+    description: Literal["Only administrators can add new books"]
 
 class CreateBookSuccessfulResponse(BaseModel):
     """ Ожидаемая модель ответа при успешном создании книги """
