@@ -37,7 +37,7 @@ def get_random_endpoint_data() -> RandomEndpointData:
     random_endpoint_data = random.choice([
         RandomEndpointData(  # Запрос на создание пользователя
             method="POST",
-            url=FrVars.APP_HOST + "/users",
+            url=FrVars.APP_HOST + "/v1/users",
             json={
                 "email": fake.email(),
                 "firstname": fake.first_name(),
@@ -48,7 +48,7 @@ def get_random_endpoint_data() -> RandomEndpointData:
         ),
         RandomEndpointData(  # Запрос на получение информации пользователем о себе
             method="GET",
-            url=FrVars.APP_HOST + "/users/me",
+            url=FrVars.APP_HOST + "/v1/users/me",
             json=None
         )
 

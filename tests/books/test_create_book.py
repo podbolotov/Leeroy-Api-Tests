@@ -43,7 +43,7 @@ class TestCreateBooks:
         total_books_count_before_request = get_books_count(db=database)
 
         res = requests.post(
-            url=FrVars.APP_HOST + "/books",
+            url=FrVars.APP_HOST + "/v1/books",
             headers={
                 "Access-Token": create_and_authorize_user.access_token
             },
@@ -102,7 +102,7 @@ class TestCreateBooks:
         ])
 
         res = requests.post(
-            url=FrVars.APP_HOST + "/books",
+            url=FrVars.APP_HOST + "/v1/books",
             headers={
                 "Access-Token": authorize_administrator.access_token
             },

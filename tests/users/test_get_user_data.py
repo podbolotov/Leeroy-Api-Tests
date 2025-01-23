@@ -35,7 +35,7 @@ class TestGetUserData:
             create_and_authorize_user, create_second_user
     ):
         res = requests.get(
-            url=FrVars.APP_HOST + "/users/" + str(create_second_user.user_id),
+            url=FrVars.APP_HOST + "/v1/users/" + str(create_second_user.user_id),
             headers={
                 "Access-Token": create_and_authorize_user.access_token
             }
@@ -63,7 +63,7 @@ class TestGetUserData:
     ):
         unavailable_in_db_user_id = str(uuid.uuid4())
         res = requests.get(
-            url=f"{FrVars.APP_HOST}/users/{unavailable_in_db_user_id}",
+            url=f"{FrVars.APP_HOST}/v1/users/{unavailable_in_db_user_id}",
             headers={
                 "Access-Token": authorize_administrator.access_token
             }
@@ -96,7 +96,7 @@ class TestGetUserData:
     def test_successful_another_user_data_get(self, database, variable_manager, authorize_administrator, create_user):
         user_id = str(create_user.user_id)
         res = requests.get(
-            url=FrVars.APP_HOST + "/users/" + user_id,
+            url=FrVars.APP_HOST + "/v1/users/" + user_id,
             headers={
                 "Access-Token": authorize_administrator.access_token
             }
@@ -170,7 +170,7 @@ class TestGetUserData:
             request_url_part = 'me'
 
         res = requests.get(
-            url=FrVars.APP_HOST + "/users/" + request_url_part,
+            url=FrVars.APP_HOST + "/v1/users/" + request_url_part,
             headers={
                 "Access-Token": create_and_authorize_user.access_token
             }

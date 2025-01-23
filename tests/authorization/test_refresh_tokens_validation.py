@@ -27,7 +27,7 @@ class TestRefreshTokenValidation:
             self, variable_manager, make_refresh_token_with_incorrect_signature
     ):
         res = requests.post(
-            url=FrVars.APP_HOST + "/refresh",
+            url=FrVars.APP_HOST + "/v1/refresh",
             json={
                 "refresh_token": make_refresh_token_with_incorrect_signature
             }
@@ -53,7 +53,7 @@ class TestRefreshTokenValidation:
             self, variable_manager, make_malformed_jwt_token
     ):
         res = requests.post(
-            url=FrVars.APP_HOST + "/refresh",
+            url=FrVars.APP_HOST + "/v1/refresh",
             json={
                 "refresh_token": make_malformed_jwt_token
             }
@@ -79,7 +79,7 @@ class TestRefreshTokenValidation:
             self, variable_manager, make_expired_refresh_token
     ):
         res = requests.post(
-            url=FrVars.APP_HOST + "/refresh",
+            url=FrVars.APP_HOST + "/v1/refresh",
             json={
                 "refresh_token": make_expired_refresh_token
             }
@@ -105,7 +105,7 @@ class TestRefreshTokenValidation:
             self, variable_manager, make_unavailable_in_db_refresh_token
     ):
         res = requests.post(
-            url=FrVars.APP_HOST + "/refresh",
+            url=FrVars.APP_HOST + "/v1/refresh",
             json={
                 "refresh_token": make_unavailable_in_db_refresh_token
             }
@@ -132,7 +132,7 @@ class TestRefreshTokenValidation:
             self, variable_manager, make_revoked_refresh_token
     ):
         res = requests.post(
-            url=FrVars.APP_HOST + "/refresh",
+            url=FrVars.APP_HOST + "/v1/refresh",
             json={
                 "refresh_token": make_revoked_refresh_token
             }

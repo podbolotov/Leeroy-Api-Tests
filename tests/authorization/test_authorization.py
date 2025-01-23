@@ -32,7 +32,7 @@ class TestMainAuthorization:
     )
     def test_authorization_with_incorrect_email(self, variable_manager):
         res = requests.post(
-            url=FrVars.APP_HOST + "/authorize",
+            url=FrVars.APP_HOST + "/v1/authorize",
             json={
                 "email": self.INCORRECT_RANDOM_EMAIL,
                 "password": self.INCORRECT_RANDOM_PASSWORD
@@ -61,7 +61,7 @@ class TestMainAuthorization:
     )
     def test_authorization_with_incorrect_password(self, variable_manager):
         res = requests.post(
-            url=FrVars.APP_HOST + "/authorize",
+            url=FrVars.APP_HOST + "/v1/authorize",
             json={
                 "email": self.CORRECT_ADMIN_EMAIL,
                 "password": self.INCORRECT_RANDOM_PASSWORD
@@ -95,7 +95,7 @@ class TestMainAuthorization:
     )
     def test_successful_authorize_default_administrator(self, database, variable_manager, logout):
         res = requests.post(
-            url=FrVars.APP_HOST + "/authorize",
+            url=FrVars.APP_HOST + "/v1/authorize",
             json={
                 "email": self.CORRECT_ADMIN_EMAIL,
                 "password": self.CORRECT_ADMIN_PASSWORD

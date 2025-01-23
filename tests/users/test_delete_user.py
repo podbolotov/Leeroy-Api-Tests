@@ -39,7 +39,7 @@ class TestDeleteUsers:
     ):
         # Отправка запроса на удаление пользователя.
         res = requests.delete(
-            url=FrVars.APP_HOST + f"/users/{create_and_authorize_second_user.user_id}",
+            url=FrVars.APP_HOST + f"/v1/users/{create_and_authorize_second_user.user_id}",
             headers={
                 "Access-Token": create_and_authorize_user.access_token
             }
@@ -137,7 +137,7 @@ class TestDeleteUsers:
     ):
         unavailable_in_db_user_id = str(uuid.uuid4())
         res = requests.delete(
-            url=FrVars.APP_HOST + f"/users/{unavailable_in_db_user_id}",
+            url=FrVars.APP_HOST + f"/v1/users/{unavailable_in_db_user_id}",
             headers={
                 "Access-Token": authorize_administrator.access_token
             }
@@ -174,7 +174,7 @@ class TestDeleteUsers:
             before_test_user_has_administrator_permissions
     ):
         res = requests.delete(
-            url=FrVars.APP_HOST + f"/users/{create_and_authorize_user.user_id}",
+            url=FrVars.APP_HOST + f"/v1/users/{create_and_authorize_user.user_id}",
             headers={
                 "Access-Token": authorize_administrator.access_token
             }
@@ -289,7 +289,7 @@ class TestDeleteUsers:
 
         # Отправка запроса на удаление пользователя.
         res = requests.delete(
-            url=FrVars.APP_HOST + f"/users/{create_and_authorize_user.user_id}",
+            url=FrVars.APP_HOST + f"/v1/users/{create_and_authorize_user.user_id}",
             headers={
                 "Access-Token": authorize_administrator.access_token
             }

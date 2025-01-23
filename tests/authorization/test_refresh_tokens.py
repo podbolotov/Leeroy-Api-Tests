@@ -39,7 +39,7 @@ class TestSuccessfulTokensRenew:
             self, variable_manager, create_and_authorize_user, logout
     , database):
         res = requests.post(
-            url=FrVars.APP_HOST + "/refresh",
+            url=FrVars.APP_HOST + "/v1/refresh",
             json={
                 "refresh_token": create_and_authorize_user.refresh_token
             }

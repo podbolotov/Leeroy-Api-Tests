@@ -33,7 +33,7 @@ class TestCreateUsers:
     )
     def test_not_unique_email(self, database, variable_manager, authorize_administrator, create_user):
         res = requests.post(
-            url=FrVars.APP_HOST + "/users",
+            url=FrVars.APP_HOST + "/v1/users",
             headers={
                 "Access-Token": authorize_administrator.access_token
             },
@@ -87,7 +87,7 @@ class TestCreateUsers:
     ):
         new_user_mail = fake.email()
         res = requests.post(
-            url=FrVars.APP_HOST + "/users",
+            url=FrVars.APP_HOST + "/v1/users",
             headers={
                 "Access-Token": create_and_authorize_user.access_token
             },
@@ -135,7 +135,7 @@ class TestCreateUsers:
         new_user_random_surname = fake.last_name()
         new_user_random_password = fake.password()
         res = requests.post(
-            url=FrVars.APP_HOST + "/users",
+            url=FrVars.APP_HOST + "/v1/users",
             headers={
                 "Access-Token": authorize_administrator.access_token
             },

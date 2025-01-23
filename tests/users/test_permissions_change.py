@@ -52,7 +52,7 @@ class TestUsersPermissions:
 
         user_id = create_user.user_id
         res = requests.patch(
-            url=FrVars.APP_HOST + f"/users/admin-permissions/{user_id}/{permission_action}",
+            url=FrVars.APP_HOST + f"/v1/users/admin-permissions/{user_id}/{permission_action}",
             headers={
                 "Access-Token": authorize_administrator.access_token
             }
@@ -122,7 +122,7 @@ class TestUsersPermissions:
 
         user_id = create_user.user_id
         res = requests.patch(
-            url=FrVars.APP_HOST + f"/users/admin-permissions/{user_id}/{permission_action}",
+            url=FrVars.APP_HOST + f"/v1/users/admin-permissions/{user_id}/{permission_action}",
             headers={
                 "Access-Token": authorize_administrator.access_token
             }
@@ -172,7 +172,7 @@ class TestUsersPermissions:
         default_user_data = get_user_data_by_email(db=database, email=FrVars.APP_DEFAULT_USER_EMAIL)
         user_id = default_user_data.id
         res = requests.patch(
-            url=FrVars.APP_HOST + f"/users/admin-permissions/{user_id}/revoke",
+            url=FrVars.APP_HOST + f"/v1/users/admin-permissions/{user_id}/revoke",
             headers={
                 "Access-Token": authorize_administrator.access_token
             }
@@ -229,7 +229,7 @@ class TestUsersPermissions:
         )
 
         res = requests.patch(
-            url=FrVars.APP_HOST + f"/users/admin-permissions/{random_user_id}/{permissions_action}",
+            url=FrVars.APP_HOST + f"/v1/users/admin-permissions/{random_user_id}/{permissions_action}",
             headers={
                 "Access-Token": create_and_authorize_user.access_token
             }

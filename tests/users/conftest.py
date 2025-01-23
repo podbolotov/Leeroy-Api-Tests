@@ -44,7 +44,7 @@ def before_test_user_has_administrator_permissions(
                 raise RuntimeError("Incorrect expected user permissions state!")
 
             res = requests.patch(
-                url=FrVars.APP_HOST + f"/users/admin-permissions/{create_user.user_id}/{action}",
+                url=FrVars.APP_HOST + f"/v1/users/admin-permissions/{create_user.user_id}/{action}",
                 headers={
                     "Access-Token": authorize_administrator.access_token
                 }

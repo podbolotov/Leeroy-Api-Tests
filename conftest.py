@@ -48,7 +48,7 @@ def authorize_administrator(variable_manager) -> AuthSuccessfulResponse:
     :return AuthSuccessfulResponse: (yield) Сериализованный ответ на запрос авторизации.
     """
     res = requests.post(
-        url=FrVars.APP_HOST + "/authorize",
+        url=FrVars.APP_HOST + "/v1/authorize",
         json={
             "email": FrVars.APP_DEFAULT_USER_EMAIL,
             "password": FrVars.APP_DEFAULT_USER_PASSWORD
@@ -70,7 +70,7 @@ def authorize_administrator(variable_manager) -> AuthSuccessfulResponse:
     yield serialized_response
 
     res = requests.delete(
-        url=FrVars.APP_HOST + "/logout",
+        url=FrVars.APP_HOST + "/v1/logout",
         headers={
             "Access-Token": serialized_response.access_token
         }
@@ -108,7 +108,7 @@ def create_user(database, authorize_administrator, request) -> CreatedUserDataBu
     # Отправка запроса на создание пользователя
     with allure.step("Создание пользователя"):
         res = requests.post(
-            url=FrVars.APP_HOST + "/users",
+            url=FrVars.APP_HOST + "/v1/users",
             headers={
                 "Access-Token": authorize_administrator.access_token
             },
@@ -163,7 +163,7 @@ def create_user(database, authorize_administrator, request) -> CreatedUserDataBu
         if user_has_administrator_permissions is True:
             with allure.step("Отзыв у удаляемого пользователя прав администратора"):
                 res = requests.patch(
-                    url=FrVars.APP_HOST + f"/users/admin-permissions/{created_user_data.user_id}/revoke",
+                    url=FrVars.APP_HOST + f"/v1/users/admin-permissions/{created_user_data.user_id}/revoke",
                     headers={
                         "Access-Token": authorize_administrator.access_token
                     }
@@ -179,7 +179,7 @@ def create_user(database, authorize_administrator, request) -> CreatedUserDataBu
         # Отправка запроса на удаление пользователя
         with allure.step("Удаление пользователя"):
             res = requests.delete(
-                url=FrVars.APP_HOST + f"/users/{created_user_data.user_id}",
+                url=FrVars.APP_HOST + f"/v1/users/{created_user_data.user_id}",
                 headers={
                     "Access-Token": authorize_administrator.access_token
                 }
@@ -223,7 +223,7 @@ def create_second_user(database, authorize_administrator) -> CreatedUserDataBund
     # Отправка запроса на создание пользователя
     with allure.step("Создание пользователя"):
         res = requests.post(
-            url=FrVars.APP_HOST + "/users",
+            url=FrVars.APP_HOST + "/v1/users",
             headers={
                 "Access-Token": authorize_administrator.access_token
             },
@@ -271,7 +271,7 @@ def create_second_user(database, authorize_administrator) -> CreatedUserDataBund
     if user_has_administrator_permissions is True:
         with allure.step("Отзыв у удаляемого пользователя прав администратора"):
             res = requests.patch(
-                url=FrVars.APP_HOST + f"/users/admin-permissions/{created_user_data.user_id}/revoke",
+                url=FrVars.APP_HOST + f"/v1/users/admin-permissions/{created_user_data.user_id}/revoke",
                 headers={
                     "Access-Token": authorize_administrator.access_token
                 }
@@ -287,7 +287,7 @@ def create_second_user(database, authorize_administrator) -> CreatedUserDataBund
     # Отправка запроса на удаление пользователя
     with allure.step("Удаление пользователя"):
         res = requests.delete(
-            url=FrVars.APP_HOST + f"/users/{created_user_data.user_id}",
+            url=FrVars.APP_HOST + f"/v1/users/{created_user_data.user_id}",
             headers={
                 "Access-Token": authorize_administrator.access_token
             }
@@ -326,7 +326,7 @@ def create_and_authorize_user(create_user, request) -> CreatedUserDataBundleWith
     """
     logout_skip_directive = getattr(request, 'param', None)
     res = requests.post(
-        url=FrVars.APP_HOST + "/authorize",
+        url=FrVars.APP_HOST + "/v1/authorize",
         json={
             "email": create_user.email,
             "password": create_user.password
@@ -365,7 +365,7 @@ def create_and_authorize_user(create_user, request) -> CreatedUserDataBundleWith
         )
     else:
         res = requests.delete(
-            url=FrVars.APP_HOST + "/logout",
+            url=FrVars.APP_HOST + "/v1/logout",
             headers={
                 "Access-Token": serialized_response.access_token
             }
@@ -391,7 +391,7 @@ def create_and_authorize_second_user(create_second_user) -> CreatedUserDataBundl
     :return: Набор данных зарегистрированного пользователя.
     """
     res = requests.post(
-        url=FrVars.APP_HOST + "/authorize",
+        url=FrVars.APP_HOST + "/v1/authorize",
         json={
             "email": create_second_user.email,
             "password": create_second_user.password
@@ -422,7 +422,7 @@ def create_and_authorize_second_user(create_second_user) -> CreatedUserDataBundl
     )
 
     res = requests.delete(
-        url=FrVars.APP_HOST + "/logout",
+        url=FrVars.APP_HOST + "/v1/logout",
         headers={
             "Access-Token": serialized_response.access_token
         }
@@ -454,7 +454,7 @@ def logout(variable_manager) -> None:
     except AttributeError:
         raise RuntimeError("access_token variable in variable_manager is not setted")
     res = requests.delete(
-        url=FrVars.APP_HOST + "/logout",
+        url=FrVars.APP_HOST + "/v1/logout",
         headers={
             "Access-Token": access_token
         }
@@ -500,7 +500,7 @@ def delete_user(database, variable_manager, authorize_administrator) -> None:
     if user_has_administrator_permissions is True:
         with allure.step("Отзыв у удаляемого пользователя прав администратора"):
             res = requests.patch(
-                url=FrVars.APP_HOST + f"/users/admin-permissions/{user_id}/revoke",
+                url=FrVars.APP_HOST + f"/v1/users/admin-permissions/{user_id}/revoke",
                 headers={
                     "Access-Token": authorize_administrator.access_token
                 }
@@ -516,7 +516,7 @@ def delete_user(database, variable_manager, authorize_administrator) -> None:
     # Отправка запроса на удаление пользователя
     with allure.step("Удаление пользователя"):
         res = requests.delete(
-            url=FrVars.APP_HOST + f"/users/{user_id}",
+            url=FrVars.APP_HOST + f"/v1/users/{user_id}",
             headers={
                 "Access-Token": authorize_administrator.access_token
             }
@@ -561,7 +561,7 @@ def delete_book(database, variable_manager, authorize_administrator) -> None:
     # Отправка запроса на удаление книги
     with allure.step("Удаление книги"):
         res = requests.delete(
-            url=FrVars.APP_HOST + f"/books/{book_id}",
+            url=FrVars.APP_HOST + f"/v1/books/{book_id}",
             headers={
                 "Access-Token": authorize_administrator.access_token
             }
