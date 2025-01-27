@@ -33,6 +33,15 @@ class CreatedBookDataBundle(BaseModel):
     isbn: str
     """ ISBN книги (10 или 13 символов) """
 
+class BookNotFoundError(BaseModel):
+    """ Ожидаемая модель ответа при попытке запроса или удаления книги, найти которую не удалось """
+    status: Literal["NOT_FOUND"] = "NOT_FOUND"
+    description: str = "Book with ID 47d9ba5e-7a97-473f-850a-65c422e32279 is not found"
+
+class DeleteBookLackOfPermissionError(BaseModel):
+    """ Ожидаемая модель ответа при попытке удаления книги пользователем, не имеющим прав администратора """
+    status: Literal["FORBIDDEN"]
+    description: Literal["Only administrators can delete books"]
 
 class DeleteBookSuccessfulResponse(BaseModel):
     """ Ожидаемая модель ответа при успешном удалении книги """
