@@ -643,7 +643,7 @@ def create_book(database, authorize_administrator, request) -> CreatedBookDataBu
 
 
 @pytest.fixture(scope="function")
-def delete_book(database, variable_manager, authorize_administrator) -> None:
+def delete_book(variable_manager, authorize_administrator) -> None:
     """
     Данная фикстура обеспечивает вызов эндпоинта DELETE /books/{book_id} для тестовых функций, которые завершились
     корректным созданием книги и требуют её удаления.

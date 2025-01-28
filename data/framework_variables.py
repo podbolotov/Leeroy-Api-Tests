@@ -3,7 +3,7 @@ from os import environ
 
 class FrameworkVariables:
     """
-    Данный класс предсталвяет собой централизованное хранилище ссылок на переменные окружения,
+    Данный класс представляет собой централизованное хранилище ссылок на переменные окружения,
     а также на их значения по умолчанию, если они не были определены в оболочке.
     """
     APP_HOST = environ.get('APP_HOST') or 'http://127.0.0.1:8080'
@@ -28,7 +28,7 @@ class FrameworkVariables:
     ''' Пароль пользователя, от имени которого будет происходить подключение к СУБД '''
 
     PASSWORD_HASH_SALT = environ.get('PASSWORD_HASH_SALT') or "DefaultPasswordHashSalt"
-    ''' Соль, применяемая при хэшировании паролей пользователей '''
+    ''' Соль, применяемая при хешировании паролей пользователей '''
 
     JWT_SIGNATURE_SECRET = environ.get('JWT_SIGNATURE_SECRET') or "DefaultJSONWebTokenSignatureSecret"
     ''' Секрет для подписи генерируемых JWT '''
