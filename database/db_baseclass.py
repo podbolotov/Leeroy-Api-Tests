@@ -1,5 +1,6 @@
-import psycopg2
-from psycopg2 import DatabaseError, extras
+import psycopg
+from psycopg import ClientCursor, DatabaseError
+from psycopg.rows import namedtuple_row
 from data.framework_variables import FrameworkVariables as FrVars
 
 
@@ -21,11 +22,14 @@ class Database:
     def connect_to_database(self):
         # Первым шагом происходит подключение к стандартной базе данных "postgres". Это необходимо для проверки
         # существования базы данных приложения "leeroy".
-        self.connection = psycopg2.connect(
-            dbname='postgres', user=self.user, password=self.password, host=self.host, port=self.port
+        self.connection = psycopg.connect(
+            cursor_factory=ClientCursor,
+            dbname='postgres',
+            user=self.user,
+            password=self.password,
+            host=self.host,
+            port=self.port
         )
-        # Регистрируем расширение для работы с нативным UUID
-        psycopg2.extras.register_uuid()
         # Создаём курсор
         self.cursor = self.connection.cursor()
         # Проверяем существование базы данных "leeroy".
@@ -36,10 +40,15 @@ class Database:
             raise DatabaseError("Database Leeroy is not exist!")
         else:
             self.connection.close()
-            self.connection = psycopg2.connect(
-                dbname='leeroy', user=self.user, password=self.password, host=self.host, port=self.port
+            self.connection = psycopg.connect(
+                cursor_factory=ClientCursor,
+                dbname='leeroy',
+                user=self.user,
+                password=self.password,
+                host=self.host,
+                port=self.port
             )
-            self.cursor = self.connection.cursor(cursor_factory=extras.NamedTupleCursor)
+            self.cursor = self.connection.cursor(row_factory=namedtuple_row)
 
     def execute_db_request(self, query: str, params: tuple = None, fetchmode: str = 'all'):
         self.cursor.execute(query, params)
