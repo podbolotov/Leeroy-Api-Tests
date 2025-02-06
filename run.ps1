@@ -1,6 +1,8 @@
 Param
 (
-    [string]$RunScope = ".\tests\"
+    [string]$RunScope = ".\tests\",
+    [string]$AppHost = "http://127.0.0.1:8080",
+    [string]$DbHost = "127.0.0.1"
 )
 
 Write-Host "[ Iteration is started. ]" -BackgroundColor Darkgray
@@ -60,6 +62,11 @@ if (
 # Parsing $RunScope param
 $RUN_SCOPE_WITH_PYTEST_ARGS=$RunScope
 Write-Host "[ Defined RUN_SCOPE and additional args is: "$RUN_SCOPE_WITH_PYTEST_ARGS"... ]"
+
+# Setting APP_HOST environment variable from AppHost param
+$env:APP_HOST=$AppHost
+# Setting DB_HOST environment variable from DbHost param
+$env:DB_HOST=$DbHost
 
 # Run pytest with passed params
 pytest $RUN_SCOPE_WITH_PYTEST_ARGS --alluredir=$PROJECT_ROOT/allure-results -s
