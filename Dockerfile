@@ -2,7 +2,7 @@
 FROM python:3.13.1-alpine AS builder
 
 RUN apk update && \
-    apk add musl-dev gcc wget tar
+    apk add wget tar
 
 RUN python -m venv /opt/venv
 
