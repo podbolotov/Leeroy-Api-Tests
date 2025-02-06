@@ -1,5 +1,5 @@
 # Первая стадия
-FROM python:3.12.5-alpine AS builder
+FROM python:3.13.1-alpine AS builder
 
 RUN apk update && \
     apk add musl-dev libpq-dev gcc wget tar
@@ -16,9 +16,10 @@ COPY ./requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Вторая стадия
-FROM python:3.12.5-alpine
+FROM python:3.13.1-alpine
 RUN apk update && \
-    apk add libpq-dev openjdk21 tzdata
+    apk add openjdk21 tzdata
+    # libpq-dev
 
 COPY --from=builder /opt/venv /opt/venv
 COPY --from=builder /opt/allure2 /opt/allure2
