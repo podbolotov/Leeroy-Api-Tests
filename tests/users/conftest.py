@@ -9,7 +9,8 @@ from helpers.allure_report import attach_request_data_to_report
 from helpers.assertions import make_simple_assertion
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
+@allure.title("Изменение уровня прав пользователя")
 def before_test_user_has_administrator_permissions(
         database, authorize_administrator, create_user, request
 ) -> bool:
@@ -61,6 +62,7 @@ def before_test_user_has_administrator_permissions(
 
 
 @pytest.fixture(scope='function')
+@allure.title("Отзыв прав администратора у всех администраторов кроме стандартного")
 def revoke_all_administrators_permissions_except_default(database):
     # Запрашиваем список всех существующих администраторов, за исключением стандартного и сохраняем его в переменную.
     initial_administrators_ids = get_all_administrators_ids(db=database, mode='except_default')

@@ -1,3 +1,4 @@
+import allure
 import pytest
 import requests
 
@@ -9,6 +10,7 @@ from models.authorization import AuthSuccessfulResponse
 
 
 @pytest.fixture(scope="class")
+@allure.title("Авторизация стандартного администратора")
 def authorize_administrator(variable_manager) -> AuthSuccessfulResponse:
     """
     Данная фикстура авторизует стандартного администратора приложения.
@@ -16,42 +18,45 @@ def authorize_administrator(variable_manager) -> AuthSuccessfulResponse:
     :param variable_manager: Ссылка на фикстуру "variable_manager".
     :return AuthSuccessfulResponse: (yield) Сериализованный ответ на запрос авторизации.
     """
-    res = requests.post(
-        url=FrVars.APP_HOST + "/v1/authorize",
-        json={
-            "email": FrVars.APP_DEFAULT_USER_EMAIL,
-            "password": FrVars.APP_DEFAULT_USER_PASSWORD
-        }
-    )
-    attach_request_data_to_report(res)
+    with allure.step("Авторизация в системе"):
+        res = requests.post(
+            url=FrVars.APP_HOST + "/v1/authorize",
+            json={
+                "email": FrVars.APP_DEFAULT_USER_EMAIL,
+                "password": FrVars.APP_DEFAULT_USER_PASSWORD
+            }
+        )
+        attach_request_data_to_report(res)
 
-    make_simple_assertion(
-        expected_value=200,
-        actual_value=res.status_code,
-        assertion_name="Код ответа на запрос фикстуры"
-    )
+        make_simple_assertion(
+            expected_value=200,
+            actual_value=res.status_code,
+            assertion_name="Код ответа на запрос фикстуры"
+        )
 
-    serialized_response = validate_response_model(
-        model=AuthSuccessfulResponse,
-        data=res.json()
-    )
+        serialized_response = validate_response_model(
+            model=AuthSuccessfulResponse,
+            data=res.json()
+        )
 
     yield serialized_response
 
-    res = requests.delete(
-        url=FrVars.APP_HOST + "/v1/logout",
-        headers={
-            "Access-Token": serialized_response.access_token
-        }
-    )
-    attach_request_data_to_report(res)
-    make_simple_assertion(
-        expected_value=200,
-        actual_value=res.status_code,
-        assertion_name="Код ответа на запрос фикстуры"
-    )
+    with allure.step("Выход из учётной записи"):
+        res = requests.delete(
+            url=FrVars.APP_HOST + "/v1/logout",
+            headers={
+                "Access-Token": serialized_response.access_token
+            }
+        )
+        attach_request_data_to_report(res)
+        make_simple_assertion(
+            expected_value=200,
+            actual_value=res.status_code,
+            assertion_name="Код ответа на запрос фикстуры"
+        )
 
 @pytest.fixture(scope="function")
+@allure.title("Выход пользователя из учётной записи")
 def logout(variable_manager) -> None:
     """
     Данная фикстура обеспечивает вызов эндпоинта /logout для тестовых функций, которые завершились корректной
@@ -64,22 +69,28 @@ def logout(variable_manager) -> None:
     :param variable_manager: Ссылка на фикстуру "variable_manager"
     :return: Данная фикстура ничего не возвращает.
     """
+
+    allure.attach("Фикстура инициализирована и ожидает стадии уборки.", "Ожидание стадии уборки")
+
     yield
     try:
         access_token = variable_manager.get('access_token')
     except AttributeError:
         raise RuntimeError("access_token variable in variable_manager is not setted")
-    res = requests.delete(
-        url=FrVars.APP_HOST + "/v1/logout",
-        headers={
-            "Access-Token": access_token
-        }
-    )
-    attach_request_data_to_report(res)
-    make_simple_assertion(
-        expected_value=200,
-        actual_value=res.status_code,
-        assertion_name="Код ответа на запрос фикстуры"
-    )
-    # Очистка переменной access_token из менеджера переменных
-    variable_manager.unset('access_token')
+
+    with allure.step("Выход из учётной записи"):
+
+        res = requests.delete(
+            url=FrVars.APP_HOST + "/v1/logout",
+            headers={
+                "Access-Token": access_token
+            }
+        )
+        attach_request_data_to_report(res)
+        make_simple_assertion(
+            expected_value=200,
+            actual_value=res.status_code,
+            assertion_name="Код ответа на запрос фикстуры"
+        )
+        # Очистка переменной access_token из менеджера переменных
+        variable_manager.unset('access_token')

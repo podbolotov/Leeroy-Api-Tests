@@ -13,6 +13,7 @@ from models.books import DeleteBookSuccessfulResponse, CreateBookSuccessfulRespo
 
 
 @pytest.fixture(scope="function")
+@allure.title("Создание тестовой книги")
 def create_book(database, authorize_administrator, request) -> CreatedBookDataBundle:
     """
     Данная фикстура обеспечивает создание книги и её удаление после завершения тестирования.
@@ -117,6 +118,7 @@ def create_book(database, authorize_administrator, request) -> CreatedBookDataBu
 
 
 @pytest.fixture(scope="function")
+@allure.title("Удаление тестовой книги")
 def delete_book(variable_manager, authorize_administrator) -> None:
     """
     Данная фикстура обеспечивает вызов эндпоинта DELETE /books/{book_id} для тестовых функций, которые завершились
@@ -131,6 +133,9 @@ def delete_book(variable_manager, authorize_administrator) -> None:
     :param variable_manager: Ссылка на фикстуру "variable_manager".
     :return: Данная фикстура ничего не возвращает.
     """
+
+    allure.attach("Фикстура инициализирована и ожидает стадии уборки.", "Ожидание стадии уборки")
+
     yield
     try:
         book_id = variable_manager.get('book_id')

@@ -16,6 +16,7 @@ from models.users import CreatedUserDataBundle, CreateUserSuccessfulResponse, De
 
 
 @pytest.fixture(scope="function")
+@allure.title("Создание тестового пользователя")
 def create_user(database, authorize_administrator, request) -> CreatedUserDataBundle:
     """
     Данная фикстура обеспечивает создание пользователя без прав администратора и его удаление после завершения
@@ -132,6 +133,7 @@ def create_user(database, authorize_administrator, request) -> CreatedUserDataBu
 # TODO: Оптимизировать фикстуры создания пользователей таким образом, чтобы одна фикстура создавала и удаляла сразу
 #  двоих тестовых пользователей.
 @pytest.fixture(scope="function")
+@allure.title("Создание второго тестового пользователя")
 def create_second_user(database, authorize_administrator) -> CreatedUserDataBundle:
     """
     Данная фикстура обеспечивает создание ещё одного пользователя без прав администратора и его удаление после
@@ -237,6 +239,7 @@ def create_second_user(database, authorize_administrator) -> CreatedUserDataBund
         )
 
 @pytest.fixture(scope="function")
+@allure.title("Создание и авторизация тестового пользователя")
 def create_and_authorize_user(create_user, request) -> CreatedUserDataBundleWithTokens:
     """
     Данная фикстура обеспечивает создание пользователя без прав администратора и его авторизацию, а также его выход из
@@ -311,6 +314,7 @@ def create_and_authorize_user(create_user, request) -> CreatedUserDataBundleWith
 # TODO: Оптимизировать фикстуры создания пользователей таким образом, чтобы одна фикстура создавала и удаляла сразу
 #  двоих тестовых пользователей.
 @pytest.fixture(scope="function")
+@allure.title("Создание и авторизация второго тестового пользователя")
 def create_and_authorize_second_user(create_second_user) -> CreatedUserDataBundleWithTokens:
     """
     Данная фикстура обеспечивает создание ещё одного пользователя без прав администратора и его авторизацию,
@@ -366,6 +370,7 @@ def create_and_authorize_second_user(create_second_user) -> CreatedUserDataBundl
     )
 
 @pytest.fixture(scope="function")
+@allure.title("Удаление тестового пользователя")
 def delete_user(database, variable_manager, authorize_administrator) -> None:
     """
     Данная фикстура обеспечивает вызов эндпоинта DELETE /users/{user_id} для тестовых функций, которые завершились
@@ -382,6 +387,9 @@ def delete_user(database, variable_manager, authorize_administrator) -> None:
     :param variable_manager: Ссылка на фикстуру "variable_manager"
     :return: Данная фикстура ничего не возвращает.
     """
+
+    allure.attach("Фикстура инициализирована и ожидает стадии уборки.", "Ожидание стадии уборки")
+
     yield
     try:
         user_id = variable_manager.get('user_id')

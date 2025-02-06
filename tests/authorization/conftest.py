@@ -27,6 +27,7 @@ class RandomEndpointData:
 
 
 @pytest.fixture(scope="class")
+@allure.title("Получение данных случайного эндпоинта")
 def get_random_endpoint_data() -> RandomEndpointData:
     """
     Данная фикстура возвращает данные одного из эндпоинтов, требующих передачи токена доступа.
@@ -65,6 +66,7 @@ def get_random_endpoint_data() -> RandomEndpointData:
 
 
 @pytest.fixture(scope="function")
+@allure.title("Создание токена доступа с некорректной подписью")
 def make_access_token_with_incorrect_signature(create_and_authorize_user) -> str:
     """
     Данная фикстура переподписывает корректный токен доступа, полученный при авторизации пользователя, при помощи
@@ -96,6 +98,7 @@ def make_access_token_with_incorrect_signature(create_and_authorize_user) -> str
     return resigned_access_token_with_incorrect_signature
 
 @pytest.fixture(scope="function")
+@allure.title("Создание токена обновления с некорректной подписью")
 def make_refresh_token_with_incorrect_signature(create_and_authorize_user) -> str:
     """
     Данная фикстура переподписывает корректный токен обновления, полученный при авторизации пользователя, при помощи
@@ -130,6 +133,7 @@ def make_refresh_token_with_incorrect_signature(create_and_authorize_user) -> st
 
 
 @pytest.fixture(scope="function")
+@allure.title("Создание токена с некорректного формата")
 def make_malformed_jwt_token() -> str:
     """
     Данная фикстура генерирует строку, визуально напоминающую JWT-токен, но не являющуюся им.
@@ -141,6 +145,7 @@ def make_malformed_jwt_token() -> str:
 
 
 @pytest.fixture(scope="function")
+@allure.title("Создание истёкшего токена доступа")
 def make_expired_access_token(create_and_authorize_user) -> str:
     """
     Данная фикстура меняет значение времени истечения в JWT-токене таким образом, чтобы он считался истёкшим.
@@ -170,6 +175,7 @@ def make_expired_access_token(create_and_authorize_user) -> str:
 
 
 @pytest.fixture(scope="function")
+@allure.title("Создание истёкшего токена обновления")
 def make_expired_refresh_token(create_and_authorize_user) -> str:
     """
     Данная фикстура меняет значение времени истечения в JWT-токене таким образом, чтобы он считался истёкшим.
@@ -199,6 +205,7 @@ def make_expired_refresh_token(create_and_authorize_user) -> str:
 
 
 @pytest.fixture(scope="function")
+@allure.title("Создание недоступного в БД токена доступа")
 def make_unavailable_in_db_access_token(create_and_authorize_user) -> str:
     """
     Данная фикстура меняет значение идентификатора в JWT-токене доступа таким образом, чтобы его нельзя было найти в БД.
@@ -228,6 +235,7 @@ def make_unavailable_in_db_access_token(create_and_authorize_user) -> str:
 
 
 @pytest.fixture(scope="function")
+@allure.title("Создание недоступного в БД токена обновления")
 def make_unavailable_in_db_refresh_token(create_and_authorize_user) -> str:
     """
     Данная фикстура меняет значение идентификатора в JWT-токене обновления таким образом, чтобы его нельзя было найти
@@ -258,6 +266,7 @@ def make_unavailable_in_db_refresh_token(create_and_authorize_user) -> str:
 
 
 @pytest.fixture(scope="function")
+@allure.title("Создание отозванного токена доступа")
 def make_revoked_access_token(database, create_and_authorize_user) -> str:
     """
     Данная фикстура предоставляет токен доступа, статус отзыва которого имеет значение "отозван" в БД.
@@ -290,6 +299,7 @@ def make_revoked_access_token(database, create_and_authorize_user) -> str:
 
 
 @pytest.fixture(scope="function")
+@allure.title("Создание отозванного токена обновления")
 def make_revoked_refresh_token(database, create_and_authorize_user) -> str:
     """
     Данная фикстура предоставляет токен обновления, статус отзыва которого имеет значение "отозван" в БД.
