@@ -1,5 +1,26 @@
+from typing import List, Type
 from database.db_baseclass import Database
 from models.books import DatabaseBookDataModel
+
+
+def get_all_books_data(db: Database) -> List[DatabaseBookDataModel] | Type[list[None]]:
+    db_result = db.execute_db_request(
+        query='SELECT * from public.books',
+        fetchmode='all'
+    )
+    if db_result is not None:
+        books_list = []
+        for book_data_bundle in db_result:
+            book_data = DatabaseBookDataModel(
+                id=book_data_bundle.id,
+                title=book_data_bundle.title,
+                author=book_data_bundle.author,
+                isbn=book_data_bundle.isbn
+            )
+            books_list.append(book_data)
+        return books_list
+    else:
+        return List[None]
 
 
 def get_book_data_by_id(db: Database, book_id: str) -> DatabaseBookDataModel | None:

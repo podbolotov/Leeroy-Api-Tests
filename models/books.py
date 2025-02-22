@@ -1,7 +1,7 @@
-from typing import Literal
+from typing import Literal, List
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, RootModel
 
 
 class DatabaseBookDataModel(BaseModel):
@@ -64,3 +64,14 @@ class CreateBookSuccessfulResponse(BaseModel):
     """ Ожидаемая модель ответа при успешном создании книги """
     status: Literal["Book successfully added"]
     book_id: UUID
+
+class SingleBook(BaseModel):
+    """ Ожидаемая модель ответа при успешном запросе данных одной книги """
+    id: UUID
+    title: str
+    author: str
+    isbn: str
+
+class MultipleBooks(RootModel):
+    """ Ожидаемая модель ответа при успешном запросе данных всех имеющихся в системе книг """
+    root: List[SingleBook]
