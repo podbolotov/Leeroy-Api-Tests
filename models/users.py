@@ -51,6 +51,14 @@ class CreatedUserDataBundleWithTokens(CreatedUserDataBundle):
     refresh_token: str
     """ Токен обновления """
 
+class CreateUserValidationCaseData(BaseModel):
+    case: str = None,
+    headers_template: dict = None,
+    body_template: dict = None,
+    case_title: str = None,
+    case_description: str = None,
+    expected_code: int = 422
+
 class CreateUserWithUsedEmailErrorResponse(DefaultError):
     status: Literal["EMAIL_IS_NOT_AVAILABLE"]
 

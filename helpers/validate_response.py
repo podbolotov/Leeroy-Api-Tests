@@ -9,13 +9,13 @@ def validate_response_model(model, data: str):
         serialized_model = model.model_validate(data)
         with allure.step("Валидация структуры ответа пройдена"):
             allure.attach(f"Использована модель: {model.__name__}\n"
-                          f"Описание модели:{model.__doc__}",
+                          f"Описание модели: {model.__doc__}",
                           "Детали валидации")
         return serialized_model
     except ValidationError as e:
         with allure.step("Валидация структуры ответа не пройдена"):
             allure.attach(f"Использована модель: {model.__name__}\n"
-                          f"Описание модели:{model.__doc__}",
+                          f"Описание модели: {model.__doc__}",
                           "Детали валидации")
             with allure.step("Ошибки валидации"):
                 errors_list = e.errors()

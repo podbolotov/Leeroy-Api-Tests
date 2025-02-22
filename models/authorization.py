@@ -16,6 +16,11 @@ class AuthUnauthorizedError(DefaultError):
     status: Literal["UNAUTHORIZED"]
     description: str
 
+class AccessTokenNotProvidedError(DefaultError):
+    """ Ожидаемый ответ при попытке обращения к запросу в авторизованной зоне без передачи токена доступа. """
+    status: Literal["TOKEN_NOT_PROVIDED"]
+    description: Literal["Access-Token is not provided"]
+
 class AccessTokenErrorTokenBadSignature(DefaultError):
     """ Ожидаемый ответ при попытке передачи токена доступа с некорректной подписью. """
     status: Literal["TOKEN_BAD_SIGNATURE"]

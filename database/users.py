@@ -1,11 +1,13 @@
 from uuid import UUID
 
+from pydantic import EmailStr
+
 from database.db_baseclass import Database
 from models.users import DatabaseUserDataModel
 from data.framework_variables import FrameworkVariables as FrVars
 
 
-def get_user_data_by_email(db: Database, email: str) -> DatabaseUserDataModel | None:
+def get_user_data_by_email(db: Database, email: str | EmailStr) -> DatabaseUserDataModel | None:
     db_result = db.execute_db_request(
         query='SELECT * from public.users WHERE email = %s;',
         params=(email,),
