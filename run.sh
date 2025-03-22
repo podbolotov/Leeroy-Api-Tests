@@ -44,9 +44,21 @@ pytest "$RUN_SCOPE_WITH_PYTEST_ARGS" --alluredir="$PROJECT_ROOT"/allure-results 
 PYTEST_EXIT_CODE=$?
 echo "[ 🤖 Pytest exitcode is $PYTEST_EXIT_CODE. ]"
 
+if [[ -d "$PROJECT_ROOT"/allure-report/ && \
+-d "$PROJECT_ROOT"/allure-report/$(ls -Art allure-report/ | tail -n 1)/multi-file/history ]]; then
+    echo "[ 🤖 Copying history from previous multi-file report... ]"
+    mv "$PROJECT_ROOT"/allure-report/$(ls -Art allure-report/ | tail -n 1)/multi-file/history \
+    "$PROJECT_ROOT"/allure-results/
+else
+    echo "[ 🤖 Previous multi-file report is not found. History won't be included in current report. ]"
+fi
+
+echo "[ 🤖 Generating multi-file report with Allure... ]"
+allure generate "$PROJECT_ROOT"/allure-results --clean --output \
+"$PROJECT_ROOT"/allure-report/"$CURRENT_TIME"/multi-file --name "Leeroy Api Tests"
 echo "[ 🤖 Generating single-file report with Allure... ]"
-allure generate "$PROJECT_ROOT"/allure-results --clean --output "$PROJECT_ROOT"/allure-report/"$CURRENT_TIME"/ \
---single-file --name "Leeroy Api Tests"
+allure generate "$PROJECT_ROOT"/allure-results --clean --output \
+"$PROJECT_ROOT"/allure-report/"$CURRENT_TIME"/single-file --single-file --name "Leeroy Api Tests"
 
 RUN_STATUS=0
 [ $PYTEST_EXIT_CODE -eq 0 ] && RUN_STATUS='🟩 Статус: все тесты пройдены.' || RUN_STATUS="🟥 Статус: обнаружены упавшие тесты."
@@ -67,11 +79,11 @@ SYSTEM_HAS_XDG_OPEN=$(which xdg-open | grep 'xdg-open')
 if [ -n "$SYSTEM_HAS_OPEN" ]
 then
     echo "[ 🤖 Report opening via open... ]"
-    open ./allure-report/"$CURRENT_TIME"/index.html > /dev/null
+    open ./allure-report/"$CURRENT_TIME"/single-file/index.html > /dev/null
 elif [ -n "$SYSTEM_HAS_XDG_OPEN" ]
 then
     echo "[ 🤖 Report opening via xdg-open... ]"
-    xdg-open ./allure-report/"$CURRENT_TIME"/index.html > /dev/null
+    xdg-open ./allure-report/"$CURRENT_TIME"/single-file/index.html > /dev/null
 else
    echo "[ 🤖 open or xdg-open not found, the report will not be opened. ]"
 fi
